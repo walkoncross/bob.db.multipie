@@ -25,8 +25,6 @@ class Database(object):
   def __init__(self):
     # opens a session to the database - keep it open until the end
     self.connect()
-    self.s_protocols = ('M', 'U', 'G', 'P051', 'P050', 'P140', 'P041', 'P130', 'P110', 'P240')
-    self.s_cameras = ('05_1', '05_0', '14_0', '04_1', '13_0', '11_0', '24_0')
   
   def connect(self):
     """Tries connecting or re-connecting to the database"""
@@ -41,28 +39,117 @@ class Database(object):
 
     return self.session is not None
 
-  def __check_validity__(self, l, obj, valid):
+  def assert_validity(self):
+    """Raise a RuntimeError if the database backend is not available"""
+
+    if not self.is_valid():
+      raise RuntimeError, "Database '%s' cannot be found at expected location '%s'. Create it and then try re-connecting using Database.connect()" % (INFO.name(), SQLITE_FILE)
+
+  def __check_validity__(self, l, obj, valid, default):
     """Checks validity of user input data against a set of valid values"""
-    if not l: return valid
-    elif isinstance(l, str): return self.__check_validity__((l,), obj, valid)
+    if not l: return default
+    elif not isinstance(l, (tuple,list)): 
+      return self.__check_validity__((l,), obj, valid, default)
     for k in l:
       if k not in valid:
         raise RuntimeError, 'Invalid %s "%s". Valid values are %s, or lists/tuples of those' % (obj, k, valid)
     return l
 
+  def groups(self):
+    """Returns the names of all registered groups"""
+
+    return ProtocolPurpose.group_choices # Same as Client.group_choices for this database
+
+  def genders(self):
+    """Returns the list of genders: 'm' for male and 'f' for female"""
+
+    return Client.gender_choices
+
+  def subworld_names(self):
+    """Returns all registered subworld names"""
+
+    self.assert_validity()
+    l = self.subworlds()
+    retval = [str(k.name) for k in l]
+    return retval
+
+  def subworlds(self):
+    """Returns the list of subworlds"""
+
+    self.assert_validity()
+
+    return list(self.session.query(Subworld))
+
+  def has_subworld(self, name):
+    """Tells if a certain subworld is available"""
+
+    self.assert_validity()
+    return self.session.query(Subworld).filter(Subworld.name==name).count() != 0
+
+  def subworld_names(self):
+    """Returns all registered subworld names"""
+
+    self.assert_validity()
+    l = self.subworlds()
+    retval = [str(k.name) for k in l]
+    return retval
+
+  def expressions(self):
+    """Returns the list of expressions"""
+
+    self.assert_validity()
+
+    return list(self.session.query(Expression))
+
+  def has_expression(self, name):
+    """Tells if a certain expression is available"""
+
+    self.assert_validity()
+    return self.session.query(Expression).filter(Expression.name==name).count() != 0
+
+  def expression_names(self):
+    """Returns all registered expression names"""
+
+    self.assert_validity()
+    l = self.expressions()
+    retval = [str(k.name) for k in l]
+    return retval
+
+  def cameras(self):
+    """Returns the list of cameras"""
+
+    self.assert_validity()
+
+    return list(self.session.query(Camera))
+
+  def has_camera(self, name):
+    """Tells if a certain camera is available"""
+
+    self.assert_validity()
+    return self.session.query(Camera).filter(Camera.name==name).count() != 0
+
+  def camera_names(self):
+    """Returns all registered camera names"""
+
+    self.assert_validity()
+    l = self.cameras()
+    retval = [str(k.name) for k in l]
+    return retval
+
   def clients(self, protocol=None, groups=None, subworld=None, gender=None, birthyear=None):
-    """Returns a set of clients for the specific query by the user.
+    """Returns a set of Clients for the specific query by the user.
 
     Keyword Parameters:
 
     protocol
-      The protocol to consider ('M', 'U', 'G', 'P051', 'P050', 'P140', 'P041', 'P130', 'P110', 'P240')
+      One of the Multi-PIE protocols (use protocol_names() to get the list of
+      available ones)
 
     groups
       The groups to which the clients belong ('dev', 'eval', 'world')
 
     subworld
-      Specify a split of the world data ("sub41", "sub81", "sub121, "sub161", "")
+      Specify a split of the world data ('sub41', 'sub81', 'sub121', 'sub161')
       In order to be considered, "world" should be in groups.
 
     gender
@@ -71,35 +158,34 @@ class Database(object):
     birthyear
       The birth year of the clients (in the range [1900,2050])
 
-    Returns: A list containing all the client ids which have the given
-    properties.
+    Returns: A list containing all the Clients which have the given properties.
     """
 
-    VALID_PROTOCOLS = self.s_protocols
-    VALID_GROUPS = ('dev', 'eval', 'world')
-    VALID_SUBWORLDS = ('sub41', 'sub81', 'sub121', 'sub161')
-    VALID_GENDERS = ('m', 'f')
+    self.assert_validity()
+
+    VALID_PROTOCOLS = self.protocol_names()
+    VALID_GROUPS = self.groups()
+    VALID_SUBWORLDS = self.subworld_names()
+    VALID_GENDERS = self.genders()
     VALID_BIRTHYEARS = range(1900, 2050)
     VALID_BIRTHYEARS.append(57) # bug in subject_list.txt (57 instead of 1957)
-    protocol = self.__check_validity__(protocol, 'protocol', VALID_PROTOCOLS)
-    groups = self.__check_validity__(groups, 'group', VALID_GROUPS)
-    if subworld: subworld = self.__check_validity__(subworld, 'subworld', VALID_SUBWORLDS)
-    gender = self.__check_validity__(gender, 'gender', VALID_GENDERS)
-    birthyear = self.__check_validity__(birthyear, 'birthyear', VALID_BIRTHYEARS)
+    protocol = self.__check_validity__(protocol, 'protocol', VALID_PROTOCOLS, VALID_PROTOCOLS)
+    groups = self.__check_validity__(groups, 'group', VALID_GROUPS, VALID_GROUPS)
+    if subworld: subworld = self.__check_validity__(subworld, 'subworld', VALID_SUBWORLDS, '')
+    gender = self.__check_validity__(gender, 'gender', VALID_GENDERS, VALID_GENDERS)
+    birthyear = self.__check_validity__(birthyear, 'birthyear', VALID_BIRTHYEARS, VALID_BIRTHYEARS)
     # List of the clients
     retval = []
     # World data
     if "world" in groups:
+      q = self.session.query(Client)
       if subworld:
-        q = self.session.query(Client).join(SubworldClient).filter(SubworldClient.name.in_(subworld))
-      else:
-        q = self.session.query(Client)
+        q = q.join(Subworld, Client.subworld).filter(Subworld.name.in_(subworld))
       q = q.filter(Client.sgroup == 'world').\
             filter(Client.gender.in_(gender)).\
             filter(Client.birthyear.in_(birthyear)).\
             order_by(Client.id)
-      for id in [k.id for k in q]:
-        retval.append(id)
+      retval += list(q)
     # dev / eval data
     if 'dev' in groups or 'eval' in groups:
       q = self.session.query(Client).\
@@ -107,9 +193,21 @@ class Database(object):
             filter(Client.gender.in_(gender)).\
             filter(Client.birthyear.in_(birthyear)).\
             order_by(Client.id)
-      for id in [k.id for k in q]:
-        retval.append(id)
+      retval += list(q)
     return retval
+
+  def has_client_id(self, id):
+    """Returns True if we have a client with a certain integer identifier"""
+
+    self.assert_validity()
+    return self.session.query(Client).filter(Client.id==id).count() != 0
+
+  def client(self, id):
+    """Returns the Client object in the database given a certain id. Raises
+    an error if that does not exist."""
+
+    self.assert_validity()
+    return self.session.query(Client).filter(Client.id==id).one()
 
   def tclients(self, protocol=None, groups=None):
     """Returns a set of T-Norm clients for the specific query by the user.
@@ -117,7 +215,8 @@ class Database(object):
     Keyword Parameters:
 
     protocol
-      The protocol to consider ('M', 'U', 'G', 'P051', 'P050', 'P140', 'P041', 'P130', 'P110', 'P240')
+      One of the Multi-PIE protocols (use protocol_names() to get the list of
+      available ones)
     
     groups
       The groups to which the clients belong ('dev', 'eval').
@@ -126,12 +225,10 @@ class Database(object):
     """
 
     VALID_GROUPS = ('dev', 'eval')
-    groups = self.__check_validity__(groups, "group", VALID_GROUPS)
+    groups = self.__check_validity__(groups, "group", VALID_GROUPS, VALID_GROUPS)
     tgroups = []
-    if 'dev' in groups:
-      tgroups.append('eval')
-    if 'eval' in groups:
-      tgroups.append('dev')
+    if 'dev' in groups: tgroups.append('eval')
+    if 'eval' in groups: tgroups.append('dev')
     return self.clients(protocol, tgroups)
 
   def zclients(self, protocol=None, groups=None):
@@ -140,7 +237,8 @@ class Database(object):
     Keyword Parameters:
 
     protocol
-      The protocol to consider ('M', 'U', 'G', 'P051', 'P050', 'P140', 'P041', 'P130', 'P110', 'P240')
+      One of the Multi-PIE protocols (use protocol_names() to get the list of
+      available ones)
     
     groups
       The groups to which the clients belong ('dev', 'eval').
@@ -149,12 +247,10 @@ class Database(object):
     """
 
     VALID_GROUPS = ('dev', 'eval')
-    groups = self.__check_validity__(groups, "group", VALID_GROUPS)
+    groups = self.__check_validity__(groups, "group", VALID_GROUPS, VALID_GROUPS)
     zgroups = []
-    if 'dev' in groups:
-      zgroups.append('eval')
-    if 'eval' in groups:
-      zgroups.append('dev')
+    if 'dev' in groups: zgroups.append('eval')
+    if 'eval' in groups: zgroups.append('dev')
     return self.clients(protocol, zgroups)
 
   def models(self, protocol=None, groups=None):
@@ -163,7 +259,8 @@ class Database(object):
     Keyword Parameters:
 
     protocol
-      The protocol to consider ('M', 'U', 'G', 'P051', 'P050', 'P140', 'P041', 'P130', 'P110', 'P240')
+      One of the Multi-PIE protocols (use protocol_names() to get the list of
+      available ones)
     
     groups
       The groups to which the subjects attached to the models belong ('dev', 'eval', 'world')
@@ -179,7 +276,8 @@ class Database(object):
     Keyword Parameters:
 
     protocol
-      The protocol to consider ('M', 'U', 'G', 'P051', 'P050', 'P140', 'P041', 'P130', 'P110', 'P240')
+      One of the Multi-PIE protocols (use protocol_names() to get the list of
+      available ones)
     
     groups
       The groups to which the models belong ('dev', 'eval').
@@ -188,23 +286,6 @@ class Database(object):
     """
 
     return self.tclients(protocol, groups)
-
-  def zmodels(self, protocol=None, groups=None):
-    """Returns a set of Z-Norm models for the specific query by the user.
-
-    Keyword Parameters:
-
-    protocol
-      The protocol to consider ('M', 'U', 'G', 'P051', 'P050', 'P140', 'P041', 'P130', 'P110', 'P240')
-    
-    groups
-      The groups to which the models belong ('dev', 'eval').
-
-    Returns: A list containing all the model ids belonging to the given group.
-    """
-
-    return self.zclients(protocol, groups)
-
 
   def get_client_id_from_model_id(self, model_id):
     """Returns the client_id attached to the given model_id
@@ -218,75 +299,20 @@ class Database(object):
     """
     return model_id
 
-  def get_client_id_from_tmodel_id(self, model_id):
-    """Returns the client_id attached to the given T-Norm model_id
-    
-    Keyword Parameters:
-
-    model_id
-      The model_id to consider
-
-    Returns: The client_id attached to the given T-Norm model_id
-    """
-    return model_id
-
-  def get_client_id_from_file_id(self, file_id):
-    """Returns the client_id (real client id) attached to the given file_id
-    
-    Keyword Parameters:
-
-    file_id
-      The file_id to consider
-
-    Returns: The client_id attached to the given file_id
-    """
-    q = self.session.query(File).\
-          filter(File.id == file_id)
-    if q.count() !=1:
-      #throw exception?
-      return None
-    else:
-      return q.first().client_id
-
-  def get_internal_path_from_file_id(self, file_id):
-    """Returns the unique "internal path" attached to the given file_id
-    
-    Keyword Parameters:
-
-    file_id
-      The file_id to consider
-
-    Returns: The internal path attached to the given file_id
-    """
-    q = self.session.query(File).\
-          filter(File.id == file_id)
-    if q.count() !=1:
-      #throw exception?
-      return None
-    else:
-      return q.first().path
-
-
-  def objects(self, directory=None, extension=None, protocol=None,
-      purposes=None, model_ids=None, groups=None, classes=None, subworld=None,
-      expressions=None, world_cameras=None, world_sampling=1, world_noflash=False, 
-      world_first=False, world_second=False, world_third=False, world_fourth=False,
-      world_nshots=None, world_shots=None):
-    """Returns a set of filenames for the specific query by the user.
+  def objects(self, protocol=None, purposes=None, model_ids=None, groups=None, 
+      classes=None, subworld=None, expressions=None, cameras=None, world_sampling=1,
+      world_noflash=False, world_first=False, world_second=False, world_third=False, 
+      world_fourth=False, world_nshots=None, world_shots=None):
+    """Returns a set of Files for the specific query by the user.
 
     Keyword Parameters:
-
-    directory
-      A directory name that will be prepended to the final filepath returned
-
-    extension
-      A filename extension that will be appended to the final filepath returned
 
     protocol
-      One of the Multi-PIE protocols ('M', 'U', 'G', 'P051', 'P050', 'P140', 'P041', 'P130', 'P110', 'P240').
+      One of the Multi-PIE protocols (use protocol_names() to get the list of
+      available ones)
 
     purposes
-      The purposes required to be retrieved ('enrol', 'probe') or a tuple
+      The purposes required to be retrieved ('enrol', 'probe', 'train') or a tuple
       with several of them. If 'None' is given (this is the default), it is 
       considered the same as a tuple with all possible values. This field is
       ignored for the data from the "world" group.
@@ -311,17 +337,17 @@ class Database(object):
       In order to be considered, "world" should be in groups.
 
     expressions
-      The (face) expressions to be retrieved ('neutral', 'smile', 'surprise',
-      'squint', 'disgust', 'scream') or a tuple with several of them. 
+      The (face) expressions to be retrieved (use expression_names() to get the
+      list of expressions) or a tuple with several of them. 
       If 'None' is given (this is the default), it is considered the same as 
-      a tuple with all possible values.
+      a tuple with all possible values. Notice that some protocols only contain
+      images with 'neutral' expression.
 
-    world_cameras
-      The cameras to be retrieved ('05_1', '05_0', '14_0', '04_1', '13_0',
-      '11_0', '24_0') or a tuple with several of them. 
-      If 'None' is given (this is the default), it is considered the same as 
-      a tuple with all possible values. The world_camera keyword is ignored in 
-      the 'dev' and 'eval' sets.  
+    cameras
+      The cameras to be retrieved (use camera_names() to get the list of cameras) 
+      r a tuple with several of them. If 'None' is given (this is the default), 
+      it is considered the same as a tuple with all possible values. The cameras 
+      keyword has no impact for some protocols (frontal images ones).
 
     world_sampling
       Samples the files from the world data set. Keeps only files such as::
@@ -356,54 +382,44 @@ class Database(object):
       Only uses data from the fourth recorded session of each user of the world
       dataset.
 
-    Returns: A dictionary containing the resolved filenames considering all
-    the filtering criteria. The keys of the dictionary are unique identities 
-    for each file in the Multi-PIE database. Conserve these numbers if you 
-    wish to save processing results later on.
+    Returns: A set of Files with the given properties.
     """
 
-    def make_path(stem, directory, extension):
-      import os
-      if not extension: extension = ''
-      if directory: return os.path.join(directory, stem + extension)
-      return stem + extension
+    self.assert_validity()
 
-    VALID_PROTOCOLS = self.s_protocols
-    VALID_PURPOSES = ('enrol', 'probe')
-    VALID_GROUPS = ('dev', 'eval', 'world')
+    VALID_PROTOCOLS = self.protocol_names()
+    VALID_PURPOSES = self.purposes()
+    VALID_GROUPS = self.groups()
     VALID_CLASSES = ('client', 'impostor')
-    VALID_SUBWORLDS = ('sub41', 'sub81', 'sub121', 'sub161')
-    VALID_EXPRESSIONS = ('neutral', 'smile', 'surprise', 'squint', 'disgust', 'scream')
-    VALID_CAMERAS = self.s_cameras
+    VALID_SUBWORLDS = self.subworld_names()
+    VALID_EXPRESSIONS = self.expression_names()
+    VALID_CAMERAS = self.camera_names()
 
-    protocol = self.__check_validity__(protocol, 'protocol', VALID_PROTOCOLS)
-    purposes = self.__check_validity__(purposes, 'purpose', VALID_PURPOSES)
-    groups = self.__check_validity__(groups, 'group', VALID_GROUPS)
-    classes = self.__check_validity__(classes, 'class', VALID_CLASSES)
-    if subworld: subworld = self.__check_validity__(subworld, 'subworld', VALID_SUBWORLDS)
-    expressions = self.__check_validity__(expressions, 'expression', VALID_EXPRESSIONS)
-    world_cameras = self.__check_validity__(world_cameras, 'camera', VALID_CAMERAS)
+    protocol = self.__check_validity__(protocol, 'protocol', VALID_PROTOCOLS, VALID_PROTOCOLS)
+    purposes = self.__check_validity__(purposes, 'purpose', VALID_PURPOSES, VALID_PURPOSES)
+    groups = self.__check_validity__(groups, 'group', VALID_GROUPS, VALID_GROUPS)
+    classes = self.__check_validity__(classes, 'class', VALID_CLASSES, VALID_CLASSES)
+    if subworld: subworld = self.__check_validity__(subworld, 'subworld', VALID_SUBWORLDS, VALID_SUBWORLDS)
+    if expressions: expressions = self.__check_validity__(expressions, 'expression', VALID_EXPRESSIONS, VALID_EXPRESSIONS)
+    if cameras: cameras = self.__check_validity__(world_cameras, 'camera', VALID_CAMERAS, VALID_CAMERAS)
 
-    retval = {}
-    
-    if(isinstance(model_ids,str)):
+    import collections
+    if(model_ids is None):
+      model_ids = ()
+    elif(not isinstance(model_ids,collections.Iterable)):
       model_ids = (model_ids,)
-   
+
+    # Now query the database
+    retval = []
     if 'world' in groups:
-      # Multiview
-      """
-      q = self.session.query(File,Expression).join(Client).join(FileMultiview).\
-            filter(Client.sgroup == 'world').\
-            filter(Expression.name.in_(expressions)).\
-            filter(and_(File.img_type == 'multiview', File.session_id == Expression.session_id,\
-                        File.recording_id == Expression.recording_id, FileMultiview.shot_id != 19))
-      """
-      q = self.session.query(FileProtocol).join(File).join(Client).join(ProtocolName).join(FileMultiview).\
-            filter(and_(ProtocolName.name.in_(protocol), FileMultiview.camera_id.in_(world_cameras), Client.sgroup == 'world', FileProtocol.purpose == 'world'))
+      q = self.session.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
+                  filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup == 'world'))
       if subworld:
-        q = q.join(SubworldClient).filter(SubworldClient.name.in_(subworld))
-      if model_ids:
-        q = q.filter(File.client_id.in_(model_ids))
+        q = q.join(Subworld, Client.subworld).filter(Subworld.name.in_(subworld))
+      if expressions: 
+        q.join(Expression).filter(Expression.name.in_(expressions))
+      if cameras: 
+        q.join(Camera).filter(Camera.name.in_(cameras))
       if(world_nshots):
         max1 = 19
         max2 = 19
@@ -451,183 +467,60 @@ class Database(object):
         q = q.filter(or_( and_(Client.fourth_session != 4, File.session_id == Client.fourth_session),
                           or_( and_(Client.third_session == 4, and_(File.session_id == 4, File.recording_id == 2)),
                                and_(Client.fourth_session == 4, and_(File.session_id == 4, File.recording_id == 1)))))
-      for k in q:
-        kk = k.file
-        retval[kk.id] = (make_path(kk.path, directory, extension), kk.client_id, kk.client_id, kk.client_id, kk.path)
+      if model_ids:
+        q = q.filter(Client.id.in_(model_ids))
+      q = q.order_by(File.client_id, File.session_id, File.recording_id, File.id)
+      retval += list(q)
     
-      # Highres
-      # TODO
-
-    if('dev' in groups or 'eval' in groups): 
-      # Dev and/or eval groups from the query
-      groups_de = []
-      if 'dev' in groups: groups_de.append('dev')
-      if 'eval' in groups: groups_de.append('eval')
-
-      # Multiview
-      # Enrol
+    if ('dev' in groups or 'eval' in groups):
       if('enrol' in purposes):
-        q = self.session.query(FileProtocol).join(File).join(Client).join(ProtocolName).\
-              filter(and_(ProtocolName.name.in_(protocol), Client.sgroup.in_(groups_de), FileProtocol.purpose == 'enrol'))
+        q = self.session.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
+              filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup.in_(groups), ProtocolPurpose.purpose == 'enrol'))
+        if expressions: 
+          q.join(Expression).filter(Expression.name.in_(expressions))
+        if cameras: 
+          q.join(Camera).filter(Camera.name.in_(cameras))
         if model_ids:
-          q = q.filter(and_(Client.id.in_(model_ids)))
-        for k in q:
-          kk = k.file
-          retval[kk.id] = (make_path(kk.path, directory, extension), kk.client_id, kk.client_id, kk.client_id, kk.path)
-      # Probe
+          q = q.filter(Client.id.in_(model_ids))
+        q = q.order_by(File.client_id, File.session_id, File.recording_id, File.id)
+        retval += list(q)
+
       if('probe' in purposes):
-        # Note: defining the variable q once outside the if statement makes it less efficient!
-        if('client' in classes and 'impostor' in classes):
-          q = self.session.query(FileProtocol).join(File).join(Client).join(ProtocolName).\
-                filter(and_(ProtocolName.name.in_(protocol), Client.sgroup.in_(groups_de), FileProtocol.purpose == 'probe'))
-          for k in q: 
-            kk = k.file
-            if(model_ids and len(model_ids) == 1):
-              retval[kk.id] = (make_path(kk.path, directory, extension), model_ids[0], model_ids[0], kk.client_id, kk.path)
-            else:
-              retval[kk.id] = (make_path(kk.path, directory, extension), kk.client_id, kk.client_id, kk.client_id, kk.path)
-        elif('client' in classes):
-          q = self.session.query(FileProtocol).join(File).join(Client).join(ProtocolName).\
-                filter(and_(ProtocolName.name.in_(protocol), Client.sgroup.in_(groups_de), FileProtocol.purpose == 'probe'))
+        if('client' in classes):
+          q = self.session.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
+                filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup.in_(groups), ProtocolPurpose.purpose == 'probe'))
+          if expressions: 
+            q.join(Expression).filter(Expression.name.in_(expressions))
+          if cameras: 
+            q.join(Camera).filter(Camera.name.in_(cameras))
           if model_ids:
             q = q.filter(Client.id.in_(model_ids))
-          for k in q: 
-            kk = k.file
-            retval[kk.id] = (make_path(kk.path, directory, extension), kk.client_id, kk.client_id, kk.client_id, kk.path) 
-        elif('impostor' in classes):
-          q = self.session.query(FileProtocol).join(File).join(Client).join(ProtocolName).\
-                filter(and_(ProtocolName.name.in_(protocol), Client.sgroup.in_(groups_de), FileProtocol.purpose == 'probe'))
-          if(model_ids and len(model_ids)==1):
+          q = q.order_by(File.client_id, File.session_id, File.recording_id, File.id)
+          retval += list(q)
+
+        if('impostor' in classes):
+          q = self.session.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
+                filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup.in_(groups), ProtocolPurpose.purpose == 'probe'))
+          if expressions: 
+            q.join(Expression).filter(Expression.name.in_(expressions))
+          if cameras: 
+            q.join(Camera).filter(Camera.name.in_(cameras))
+          if len(model_ids) == 1:
             q = q.filter(not_(Client.id.in_(model_ids)))
-          for k in q:
-            kk = k.file
-            if(model_ids and len(model_ids) == 1):
-              retval[kk.id] = (make_path(kk.path, directory, extension), model_ids[0], model_ids[0], kk.client_id, kk.path)
-            else:
-              retval[kk.id] = (make_path(kk.path, directory, extension), kk.client_id, kk.client_id, kk.client_id, kk.path)
+          q = q.order_by(File.client_id, File.session_id, File.recording_id, File.id)
+          retval += list(q)
+    
+    return list(set(retval)) # To remove duplicates
 
-      # Highres
-      # TODO
-
-    return retval
-
-  def files(self, directory=None, extension=None, protocol=None,
-      purposes=None, model_ids=None, groups=None, classes=None, subworld=None,
-      expressions=None, world_cameras=None, world_sampling=1, world_noflash=False, 
-      world_first=False, world_second=False, world_third=False, world_fourth=False,
-      world_nshots=None, world_shots=None):
-    """Returns a set of filenames for the specific query by the user.
-
-    Keyword Parameters:
-
-    directory
-      A directory name that will be prepended to the final filepath returned
-
-    extension
-      A filename extension that will be appended to the final filepath returned
-
-    protocol
-      One of the Multi-PIE protocols ('M', 'U', 'G', 'P051', 'P050', 'P140', 'P041', 'P130', 'P110', 'P240').
-
-    purposes
-      The purposes required to be retrieved ('enrol', 'probe') or a tuple
-      with several of them. If 'None' is given (this is the default), it is 
-      considered the same as a tuple with all possible values. This field is
-      ignored for the data from the 'world' group.
-
-    model_ids
-      Only retrieves the files for the provided list of model ids (claimed 
-      client id).  If 'None' is given (this is the default), no filter over 
-      the model_ids is performed.
-
-    groups
-      One of the groups ('dev', 'eval', 'world') or a tuple with several of them. 
-      If 'None' is given (this is the default), it is considered the same as a 
-      tuple with all possible values.
-
-    classes
-      The classes (types of accesses) to be retrieved ('client', 'impostor') 
-      or a tuple with several of them. If 'None' is given (this is the 
-      default), it is considered the same as a tuple with all possible values.
-
-    subworld
-      Specify a split of the world data ("sub41", "sub81", "sub121, "sub161", "")
-      In order to be considered, "world" should be in groups.
-
-    expressions
-      The (face) expressions to be retrieved ('neutral', 'smile', 'surprise',
-      'squint', 'disgust', 'scream') or a tuple with several of them. 
-      If 'None' is given (this is the default), it is considered the same as 
-      a tuple with all possible values.
-
-    world_cameras
-      The cameras to be retrieved ('05_1', '05_0', '14_0', '04_1', '13_0',
-      '11_0', '24_0') or a tuple with several of them. 
-      If 'None' is given (this is the default), it is considered the same as 
-      a tuple with all possible values. The world_camera keyword is ignored in 
-      the 'dev' and 'eval' sets.  
-
-    world_sampling
-      Samples the files from the world data set. Keeps only files such as::
-
-        File.client_id + File.shot_id % world_sampling == 0
-
-      This argument should be an integer between 1 (keep everything) and 20.
-      It is not used if world_noflash is also set.
-
-    world_nshots
-      Only considers the n first shots from the world data set.
-
-    world_shots
-      Only considers the shots with the given ids.
-
-    world_noflash
-      Keeps the files from the world dataset recorded without flash (shot 0)
-      
-    world_first
-      Only uses data from the first recorded session of each user of the world
-      dataset.
-
-    world_second
-      Only uses data from the second recorded session of each user of the world
-      dataset.
-
-    world_third
-      Only uses data from the third recorded session of each user of the world
-      dataset.
-
-    world_fourth
-      Only uses data from the fourth recorded session of each user of the world
-      dataset.
-
-    Returns: A dictionary containing the resolved filenames considering all
-    the filtering criteria. The keys of the dictionary are unique identities 
-    for each file in the Multi-PIE database. Conserve these numbers if you 
-    wish to save processing results later on.
-    """
-
-    retval = {}
-    d = self.objects(directory, extension, protocol, purposes, model_ids, groups, classes, subworld, expressions, world_cameras, world_sampling, world_noflash, world_first, world_second, world_third, world_fourth, world_nshots, world_shots)
-    for k in d: retval[k] = d[k][0]
-
-    return retval
-
-
-  def tobjects(self, directory=None, extension=None, protocol=None,
-      model_ids=None, groups=None, expressions=None):
+  def tobjects(self, protocol=None, model_ids=None, groups=None, expressions=None):
     """Returns a set of filenames for enrolling T-norm models for score 
        normalization.
 
     Keyword Parameters:
 
-    directory
-      A directory name that will be prepended to the final filepath returned
-
-    extension
-      A filename extension that will be appended to the final filepath returned
-
     protocol
-      One of the Multi-PIE protocols ('M', 'U', 'G', 'P051', 'P050', 'P140', 'P041', 'P130', 'P110', 'P240').
+      One of the Multi-PIE protocols (use protocol_names() to get the list of
+      available ones)
 
     model_ids
       Only retrieves the files for the provided list of model ids (claimed 
@@ -638,21 +531,13 @@ class Database(object):
       The groups to which the clients belong ('dev', 'eval').
 
     expressions
-      The (face) expressions to be retrieved ('neutral', 'smile', 'surprise',
-      'squint', 'disgust', 'scream') or a tuple with several of them. 
+      The (face) expressions to be retrieved (use expression_names() to get the
+      list of expressions) or a tuple with several of them. 
       If 'None' is given (this is the default), it is considered the same as 
-      a tuple with all possible values.
+      a tuple with all possible values. Notice that some protocols only contain
+      images with 'neutral' expression.
 
-    Returns: A dictionary containing:
-      - 0: the resolved filenames 
-      - 1: the model id
-      - 2: the claimed id attached to the model
-      - 3: the real id
-      - 4: the "stem" path (basename of the file)
-
-    considering all the filtering criteria. The keys of the dictionary are 
-    unique identities for each file in the Multi-PIE database. Conserve these 
-    numbers if you wish to save processing results later on.
+    Returns: A list of Files with the given properties.
     """
 
     VALID_GROUPS = ('dev', 'eval')
@@ -662,70 +547,16 @@ class Database(object):
       tgroups.append('eval')
     if 'eval' in groups:
       tgroups.append('dev')
-    return self.objects(directory, extension, protocol, 'enrol', model_ids, tgroups, 'client', None, expressions)
+    return self.objects(protocol, 'enrol', model_ids, tgroups, 'client', None, expressions)
 
-  def tfiles(self, directory=None, extension=None, protocol=None,
-      model_ids=None, groups=None, expressions=None):
-    """Returns a set of filenames for enrolling T-norm models for score 
-       normalization.
-
-    Keyword Parameters:
-
-    directory
-      A directory name that will be prepended to the final filepath returned
-
-    extension
-      A filename extension that will be appended to the final filepath returned
-
-    protocol
-      One of the Multi-PIE protocols ('M', 'U', 'G', 'P051', 'P050', 'P140', 'P041', 'P130', 'P110', 'P240').
-
-    model_ids
-      Only retrieves the files for the provided list of model ids (claimed 
-      client id).  If 'None' is given (this is the default), no filter over 
-      the model_ids is performed.
-
-    groups
-      The groups to which the clients belong ('dev', 'eval').
-
-    expressions
-      The (face) expressions to be retrieved ('neutral', 'smile', 'surprise',
-      'squint', 'disgust', 'scream') or a tuple with several of them. 
-      If 'None' is given (this is the default), it is considered the same as 
-      a tuple with all possible values.
-
-    Returns: A dictionary containing:
-      - 0: the resolved filenames 
-      - 1: the model id
-      - 2: the claimed id attached to the model
-      - 3: the real id
-      - 4: the "stem" path (basename of the file)
-
-    considering allthe filtering criteria. The keys of the dictionary are 
-    unique identities for each file in the Multi-PIE database. Conserve these 
-    numbers if you wish to save processing results later on.
-    """
-
-    retval = {}
-    d = self.tobjects(directory, extension, protocol, model_ids, groups, expressions)
-    for k in d: retval[k] = d[k][0]
-
-    return retval
-
-  def zobjects(self, directory=None, extension=None, protocol=None,
-      model_ids=None, groups=None, expressions=None):
+  def zobjects(self, protocol=None, model_ids=None, groups=None, expressions=None):
     """Returns a set of filenames of impostors for Z-norm score normalization.
 
     Keyword Parameters:
 
-    directory
-      A directory name that will be prepended to the final filepath returned
-
-    extension
-      A filename extension that will be appended to the final filepath returned
-
     protocol
-      One of the Multi-PIE protocols ('M', 'U', 'G', 'P051', 'P050', 'P140', 'P041', 'P130', 'P110', 'P240').
+      One of the Multi-PIE protocols (use protocol_names() to get the list of
+      available ones)
 
     model_ids
       Only retrieves the files for the provided list of model ids (client id).  
@@ -736,19 +567,13 @@ class Database(object):
       The groups to which the clients belong ('dev', 'eval').
 
     expressions
-      The (face) expressions to be retrieved ('neutral', 'smile', 'surprise',
-      'squint', 'disgust', 'scream') or a tuple with several of them. 
+      The (face) expressions to be retrieved (use expression_names() to get the
+      list of expressions) or a tuple with several of them. 
       If 'None' is given (this is the default), it is considered the same as 
-      a tuple with all possible values.
+      a tuple with all possible values. Notice that some protocols only contain
+      images with 'neutral' expression.
 
-    Returns: A dictionary containing:
-      - 0: the resolved filenames 
-      - 1: the client id
-      - 2: the "stem" path (basename of the file)
-
-    considering allthe filtering criteria. The keys of the dictionary are 
-    unique identities for each file in the Multi-PIE database. Conserve these
-    numbers if you wish to save processing results later on.
+    Returns: A list of Files with the given properties.
     """
 
     VALID_GROUPS = ('dev', 'eval')
@@ -759,112 +584,91 @@ class Database(object):
       zgroups.append('eval')
     if 'eval' in groups:
       zgroups.append('dev')
+    return self.objects(protocol, 'probe', model_ids, zgroups, 'client', None, expressions)
 
-    retval = {}
-    d = self.objects(directory, extension, protocol, 'probe', model_ids, zgroups, 'client', None, expressions)
-    for k in d: retval[k] = d[k]
+  def protocol_names(self):
+    """Returns all registered protocol names"""
 
+    self.assert_validity()
+    l = self.protocols()
+    retval = [str(k.name) for k in l]
     return retval
 
-  def zfiles(self, directory=None, extension=None, protocol=None,
-      model_ids=None, groups=None, expressions=None):
-    """Returns a set of filenames for enrolling T-norm models for score 
-       normalization.
+  def protocols(self):
+    """Returns all registered protocols"""
 
-    Keyword Parameters:
+    self.assert_validity()
+    return list(self.session.query(Protocol))
 
-    directory
-      A directory name that will be prepended to the final filepath returned
+  def has_protocol(self, name):
+    """Tells if a certain protocol is available"""
 
-    extension
-      A filename extension that will be appended to the final filepath returned
+    self.assert_validity()
+    return self.session.query(Protocol).filter(Protocol.name==name).count() != 0
 
-    protocol
-      One of the Multi-PIE protocols ('M', 'U', 'G', 'P051', 'P050', 'P140', 'P041', 'P130', 'P110', 'P240').
+  def protocol(self, name):
+    """Returns the protocol object in the database given a certain name. Raises
+    an error if that does not exist."""
 
-    model_ids
-      Only retrieves the files for the provided list of model ids (claimed 
-      client id).  If 'None' is given (this is the default), no filter over 
-      the model_ids is performed.
+    self.assert_validity()
+    return self.session.query(Protocol).filter(Protocol.name==name).one()
 
-    groups
-      The groups to which the clients belong ('dev', 'eval').
+  def protocol_purposes(self):
+    """Returns all registered protocol purposes"""
 
-    expressions
-      The (face) expressions to be retrieved ('neutral', 'smile', 'surprise',
-      'squint', 'disgust', 'scream') or a tuple with several of them. 
-      If 'None' is given (this is the default), it is considered the same as 
-      a tuple with all possible values.
+    self.assert_validity()
+    return list(self.session.query(ProtocolPurpose))
 
-    Returns: A dictionary containing:
-      - 0: the resolved filenames 
-      - 1: the client id
-      - 2: the "stem" path (basename of the file)
+  def purposes(self):
+    """Returns the list of allowed purposes"""
 
-    considering allthe filtering criteria. The keys of the dictionary are 
-    unique identities for each file in the Multi-PIE database. Conserve these 
-    numbers if you wish to save processing results later on.
-    """
+    return ProtocolPurpose.purpose_choices
 
-    retval = {}
-    d = self.zobjects(directory, extension, protocol, model_ids, groups, expressions)
-    for k in d: retval[k] = d[k][0]
+  def paths(self, ids, prefix='', suffix=''):
+    """Returns a full file paths considering particular file ids, a given
+    directory and an extension
 
-    return retval
-
-
-  def save_one(self, id, obj, directory, extension):
-    """Saves a single object supporting the bob save() protocol.
-
-    This method will call save() on the the given object using the correct
-    database filename stem for the given id.
-    
     Keyword Parameters:
 
     id
-      The id of the object in the database table "file".
+      The ids of the object in the database table "file". This object should be
+      a python iterable (such as a tuple or list).
 
-    obj
-      The object that needs to be saved, respecting the bob save() protocol.
+    prefix
+      The bit of path to be prepended to the filename stem
 
-    directory
-      This is the base directory to which you want to save the data. The
-      directory is tested for existence and created if it is not there with
-      os.makedirs()
+    suffix
+      The extension determines the suffix that will be appended to the filename
+      stem.
 
-    extension
-      The extension determines the way each of the arrays will be saved.
+    Returns a list (that may be empty) of the fully constructed paths given the
+    file ids.
     """
 
-    import os
-    from bob.io import save
+    self.assert_validity()
 
-    fobj = self.session.query(File).filter_by(id=id).one()
-    fullpath = os.path.join(directory, str(fobj.path) + extension)
-    fulldir = os.path.dirname(fullpath)
-    utils.makedirs_safe(fulldir)
-    save(obj, fullpath)
+    fobj = self.session.query(File).filter(File.id.in_(ids))
+    retval = []
+    for p in ids:
+      retval.extend([k.make_path(prefix, suffix) for k in fobj if k.id == p])
+    return retval
 
-  def save(self, data, directory, extension):
-    """This method takes a dictionary of blitz arrays or bob.database.Array's
-    and saves the data respecting the original arrangement as returned by
-    files().
+  def reverse(self, paths):
+    """Reverses the lookup: from certain stems, returning file ids
 
     Keyword Parameters:
 
-    data
-      A dictionary with two keys 'real' and 'attack', each containing a
-      dictionary mapping file ids from the original database to an object that
-      supports the bob "save()" protocol.
+    paths
+      The filename stems I'll query for. This object should be a python
+      iterable (such as a tuple or list)
 
-    directory
-      This is the base directory to which you want to save the data. The
-      directory is tested for existence and created if it is not there with
-      os.makedirs()
+    Returns a list (that may be empty).
+    """
 
-    extension
-      The extension determines the way each of the arrays will be saved.
-    """    
+    self.assert_validity()
 
-    for key, value in data:
-      self.save_one(key, value, directory, extension)
+    fobj = self.session.query(File).filter(File.path.in_(paths))
+    for p in paths:
+      retval.extend([k.id for k in fobj if k.path == p])
+    return retval
+ 

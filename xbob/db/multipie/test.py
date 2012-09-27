@@ -26,19 +26,66 @@ from .query import Database
 class MultipieDatabaseTest(unittest.TestCase):
   """Performs various tests on the Multi-PIE database."""
 
-  def test01_manage_dumplist_1(self):
+  def test01_clients(self):
+
+    db = Database()
+
+    clients = db.clients()
+    self.assertEqual(len(clients), 337) #337 clients overall
+    # Number of clients in each set
+    c_dev = db.clients(groups='dev')
+    self.assertEqual(len(c_dev), 64) #64 clients in the dev set
+    c_eval = db.clients(groups='eval')
+    self.assertEqual(len(c_eval), 65) #65 clients in the eval set
+    c_world = db.clients(groups='world')
+    self.assertEqual(len(c_world), 208) #208 clients in the world set
+    # Check client ids 
+    self.assertTrue(db.has_client_id(1))
+    self.assertFalse(db.has_client_id(395))
+    # Check subworld
+    self.assertEqual(len(db.clients(groups='world', subworld='sub41')), 41) 
+    self.assertEqual(len(db.clients(groups='world', subworld='sub81')), 81) 
+    self.assertEqual(len(db.clients(groups='world', subworld='sub121')), 121) 
+    self.assertEqual(len(db.clients(groups='world', subworld='sub161')), 161) 
+    # Check files relationship
+    c = db.client(1)
+    len(c.files) # Number depends on the way the database was created (pose only, etc.)
+
+  def test02_protocols(self):
+
+    db = Database()
+
+    # TODO: Depends on the way the database was created (pose only, etc.)
+    #self.assertEqual(len(db.protocols()), 4)
+    #self.assertEqual(len(db.protocol_names()), 4)
+    #self.assertTrue(db.has_protocol('M'))
+
+    self.assertEqual(len(db.subworlds()), 4)
+    self.assertEqual(len(db.subworld_names()), 4)
+    self.assertTrue(db.has_subworld('sub41'))
+
+  def test03_files(self):
+  
+    # TODO: depends on the way the database was created (pose only, etc.)
+    db = Database()
+
+  def test04_manage_dumplist_1(self):
 
     from bob.db.script.dbmanage import main
 
     self.assertEqual(main('multipie dumplist --self-test'.split()), 0)
 
-  def test02_manage_dumplist_2(self):
+  def test05_manage_dumplist_2(self):
     
     from bob.db.script.dbmanage import main
 
-    self.assertEqual(main('multipie dumplist --protocol=M --classes=client --groups=dev --purposes=enrol --self-test'.split()), 0)
+    db = Database()
+    if db.has_protocol('M'):
+      self.assertEqual(main('multipie dumplist --protocol=M --classes=client --groups=dev --purposes=enrol --self-test'.split()), 0)
+    elif db.has_protocol('P051'):
+      self.assertEqual(main('multipie dumplist --protocol=P051 --classes=client --groups=dev --purposes=enrol --self-test'.split()), 0)
 
-  def test03_manage_checkfiles(self):
+  def test06_manage_checkfiles(self):
 
     from bob.db.script.dbmanage import main
 

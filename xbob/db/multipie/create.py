@@ -14,7 +14,7 @@ def nodot(item):
   """Can be used to ignore hidden files, starting with the . character."""
   return item[0] != '.'
 
-def add_clients(session, filelist):
+def add_clients(session, filelist, verbose):
   """Add files (and clients) to the Multi-PIE database."""
 
   # Define development and evaluation set in term of client ids
@@ -26,7 +26,7 @@ def add_clients(session, filelist):
               106, 108, 112, 116, 117, 122, 124, 127, 129, 131, 133, 138, 145, 150, 156, 161, 168, 175, 178, 181, 185, 188, 192, 194, 
               196, 199, 203, 209, 223, 225, 230, 236, 240, 246, 250]
  
-  def add_client(session, client_string, client_dict):
+  def add_client(session, client_string, client_dict, verbose):
     """Parse a single client string and add its content to the database.
        Also add a client entry if not already in the database."""
 
@@ -76,29 +76,26 @@ def add_clients(session, filelist):
       group = 'world'
       if int(v[0]) in dev_ids: group = 'dev'
       elif int(v[0]) in eval_ids: group = 'eval'
-        
+      if verbose: print "Adding client '%d' ..." % int(v[0])
       session.add(Client(int(v[0]), group, int(v[1]), v[2], first_session, second_session, third_session, fourth_session))
       client_dict[v[0]] = True
   
   client_dict = {} 
   for line in fileinput.input(filelist):
-    add_client(session, line, client_dict)
+    add_client(session, line, client_dict, verbose)
 
-def add_subworldclients(session):
-  """Adds subworld clients"""
-  # 41
+def add_subworlds(session, verbose):
+  """Adds splits in the world set, based on the client ids"""
+
+  # Lists for the subworld subsets
   l41 =  [ 21,  26,  31,  39,  66,  75,  81,  90,  98, 109, 114, 148, 152, 158, 165, 171, 174, 179, 182, 197, 
           207, 215, 226, 239, 244, 256, 271, 277, 303, 309, 310, 315, 321, 326, 327, 333, 336, 338, 339, 341, 
           342]
-  for x in l41: session.add(SubworldClient('sub41', x))
-  # 81
   l81 =  [ 16,  21,  26,  31,  37,  39,  51,  65,  66,  73,  75,  81,  84,  86,  87,  90,  94,  95,  98,  99,
           109, 114, 134, 142, 144, 148, 151, 152, 158, 164, 165, 171, 173, 174, 179, 182, 195, 197, 207, 215, 
           217, 222, 226, 239, 244, 247, 249, 251, 256, 259, 260, 263, 264, 265, 271, 272, 276, 277, 287, 298, 
           303, 304, 306, 309, 310, 312, 315, 317, 319, 320, 321, 324, 326, 327, 329, 333, 336, 338, 339, 341, 
           342]
-  for x in l81: session.add(SubworldClient('sub81', x)) 
-  # 121
   l121 = [  7,  16,  21,  24,  26,  30,  31,  37,  39,  51,  60,  61,  63,  65,  66,  72,  73,  75,  81,  84, 
            86,  87,  90,  91,  94,  95,  96,  98,  99, 109, 114, 134, 135, 142, 144, 148, 151, 152, 158, 159, 
           164, 165, 166, 171, 173, 174, 176, 179, 180, 182, 195, 197, 207, 210, 214, 215, 217, 221, 222, 226, 
@@ -106,8 +103,6 @@ def add_subworldclients(session):
           271, 272, 276, 277, 278, 279, 285, 287, 291, 292, 293, 294, 297, 298, 300, 301, 303, 304, 306, 309, 
           310, 311, 312, 315, 317, 319, 320, 321, 322, 324, 325, 326, 327, 329, 333, 336, 338, 339, 341, 342, 
           344]
-  for x in l121: session.add(SubworldClient('sub121', x)) 
-  # 161
   l161 = [  7,  12,  13,  16,  21,  24,  26,  30,  31,  37,  39,  45,  51,  60,  61,  63,  65,  66,  72,  73, 
            75,  77,  81,  82,  84,  86,  87,  88,  90,  91,  93,  94,  95,  96,  98,  99, 101, 109, 114, 119,
           120, 121, 134, 135, 136, 142, 144, 148, 151, 152, 153, 158, 159, 160, 162, 163, 164, 165, 166, 171, 
@@ -117,29 +112,92 @@ def add_subworldclients(session):
           295, 296, 297, 298, 299, 300, 301, 303, 304, 306, 308, 309, 310, 311, 312, 313, 314, 315, 317, 319, 
           320, 321, 322, 323, 324, 325, 326, 327, 329, 333, 335, 336, 337, 338, 339, 341, 342, 343, 344, 345, 
           346]
-  for x in l161: session.add(SubworldClient('sub161', x)) 
+  snames = ['sub41', 'sub81', 'sub121', 'sub161']
+  slist = [l41, l81, l121, l161]
+  for k in range(len(snames)):
+    if verbose: print "Adding subworld '%s'" %(snames[k], )
+    su = Subworld(snames[k])
+    session.add(su)
+    session.flush()
+    session.refresh(su)
+    l = slist[k]
+    for c_id in l:
+      if verbose: print "Adding client '%d' to subworld '%s'..." %(c_id, snames[k])
+      su.clients.append(session.query(Client).filter(Client.id == c_id).first())
 
-def add_files(session, imagedir, all_poses):
+def add_files(session, imagedir, illuminations, poses, expressions, highresolutions, verbose):
   """Add files (and clients) to the Multi-PIE database."""
   
-  def add_mv_file(session, filename, session_id, client_id, recording_id, camera_id):
+  def add_mv_file(session, filename, session_id, client_id, recording_id, camera_name, expr_dict, cam_dict, expressions, verbose):
     """Parse a single filename and add it to the list.
        Also add a client entry if not already in the database."""
     v = os.path.splitext(filename)[0].split('_')
-    f = File(int(client_id), filename, int(session_id[8]), int(recording_id), 'multiview')
-    session.add(f)
-    # We want to make use of the new assigned file id
-    # We need to do the following:
-    session.flush()
-    session.refresh(f)
-    session.add(FileMultiview(f.id, camera_id, int(v[5])))
+    shot_id = int(v[5])
+    if illuminations or shot_id == 0:
+      if verbose: print "Adding file (multiview) '%s' ..." %(filename,)
+      sid = int(session_id[8])
+      rid = int(recording_id)
+      eid = expr_dict[(sid,rid)][0]
+      ename = expr_dict[(sid,rid)][1]
+      cid = cam_dict[camera_name]
+      if (expressions == True or ename == 'neutral'):
+        f = File(int(client_id), filename, sid, rid, 'multiview', eid)
+        # We want to make use of the new assigned file id
+        # We need to do the following:
+        session.add(f)
+        session.flush()
+        session.refresh(f)
+        session.add(FileMultiview(f.id, shot_id, cid))
  
-  def add_hr_file(session, filename, session_id, client_id):
+  def add_hr_file(session, filename, session_id, client_id, expr_dict, expressions, verbose):
     """Parse a single filename and add it to the list.
        Also add a client entry if not already in the database."""
+    if verbose: print "Adding file (multiview) '%s' ..." %(filename,)
     v = os.path.splitext(filename)[0].split('_')
-    session.add(File(int(client_id), filename, int(session_id[8]), int(v[1]), 'highres'))
- 
+    sid = int(session_id[8])
+    rid = int(v[1])
+    eid = expr_dict[(sid,rid)][0]
+    ename = expr_dict[(sid,rid)][1]
+    if (expressions == True or ename == 'neutral'):
+      session.add(File(int(client_id), filename, sid, rid, 'highres', eid))
+
+  def add_expressions(session, verbose):
+    """Adds expressions"""
+
+    expr_list = ['neutral', 'smile', 'surprise', 'squint', 'disgust', 'scream']
+    expr_srid = [[(1,1), (2,1), (3,1), (4,1), (4,2)], [(1,2), (3,2)], [(2,2)], [(2,3)], [(3,3)], [(4,3)]]
+    expr_dict = {}
+    for k in range(len(expr_list)):
+      el = expr_list[k]
+      if verbose: print "Adding expression '%s'..." % (el)
+      e = Expression(el)
+      session.add(e)
+      session.flush()
+      session.refresh(e)
+      indices = expr_srid[k]
+      for ind in indices:
+        expr_dict[ind] = [e.id, e.name]
+    return expr_dict
+
+  def add_cameras(session, verbose):
+    """Adds cameras"""
+
+    cam_list = ['24_0', '01_0', '20_0', '19_0', '04_1', '19_1', '05_0', '05_1', '14_0', '08_1', 
+                '13_0', '08_0', '09_0', '12_0', '11_0']
+    cam_dict = {}
+    for el in cam_list:
+      if verbose: print "Adding cameras '%s'..." % (el)
+      c = Camera(el)
+      session.add(c)
+      session.flush()
+      session.refresh(c)
+      cam_dict[el] = c.id
+    return cam_dict
+  
+  # Start by creating the expressions and the cameras
+  expr_dict = add_expressions(session, verbose)
+  cam_dict = add_cameras(session, verbose)
+
   list_of_files = {}
   # session
   for session_id in filter(nodot, os.listdir(imagedir)):
@@ -153,291 +211,182 @@ def add_files(session, imagedir, all_poses):
       # recording id
       for recording_id in filter(nodot, os.listdir(client_dir)):
         recording_dir = os.path.join(client_dir, recording_id)
-        # camera id
-        for camera_id in filter(nodot, os.listdir(recording_dir)):
+        # camera name
+        for camera_name in filter(nodot, os.listdir(recording_dir)):
           # Check if it is the frontal camera 05_1
-          if ((not all_poses) and camera_id != '05_1'):
+          if ((not poses) and camera_name != '05_1'):
             continue
-          camera_dir = os.path.join(recording_dir, camera_id)
+          camera_dir = os.path.join(recording_dir, camera_name)
           # flashes/images
           for filename in filter(nodot, os.listdir(camera_dir)):
             basename, extension = os.path.splitext(filename)
-            add_mv_file(session, os.path.join( session_id, 'multiview', client_id, recording_id, camera_id, basename), session_id, client_id, recording_id, camera_id)
+            add_mv_file(session, os.path.join( session_id, 'multiview', client_id, recording_id, camera_name, basename), session_id, client_id, 
+                        recording_id, camera_name, expr_dict, cam_dict, expressions, verbose)
 
-    # highres
-    hr_dir = os.path.join(se_dir, 'highres')
-    # client id
-    for client_id in filter(nodot, os.listdir(hr_dir)):
-      client_dir = os.path.join(hr_dir, client_id)
-      # flashes/images
-      for filename in filter(nodot, os.listdir(client_dir)):
-        basename, extension = os.path.splitext(filename)
-        add_hr_file(session, os.path.join( session_id, 'highres', client_id, basename), session_id, client_id)
+    if highresolutions:
+      # highres
+      hr_dir = os.path.join(se_dir, 'highres')
+      # client id
+      for client_id in filter(nodot, os.listdir(hr_dir)):
+        client_dir = os.path.join(hr_dir, client_id)
+        # flashes/images
+        for filename in filter(nodot, os.listdir(client_dir)):
+          basename, extension = os.path.splitext(filename)
+          add_hr_file(session, os.path.join( session_id, 'highres', client_id, basename), session_id, client_id, expr_dict, expressions, verbose)
 
-def add_protocols(session):
+def add_protocols(session, illuminations, poses, expressions, highresolutions, verbose):
   """Adds protocols"""
 
-  def addProtocolMultiview(session, protocol, group, purpose, session_id, recording_id, camera_shot_ids):
-    """Add a multiview protocol entry"""
-    p = Protocol(protocol, group, purpose, session_id, recording_id, 'multiview')
+  # 1. DEFINITIONS
+  # Tuples in the lists correspond to (session_ids, recording_ids, cameras, shot_ids), 
+  # [] value indicates all sessions/recordings/cameras/shots.
+  protocol_definitions = {}
+
+  # useful cameras and shots
+  shot0 = [0]
+  shots = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+  cam240 = ['24_0']
+  cam010 = ['01_0']
+  cam200 = ['20_0']
+  cam190 = ['19_0']
+  cam041 = ['04_1']
+  cam191 = ['19_1']
+  cam050 = ['05_0']
+  cam051 = ['05_1']
+  cam140 = ['14_0']
+  cam081 = ['08_1']
+  cam130 = ['13_0']
+  cam080 = ['08_0']
+  cam090 = ['09_0']
+  cam120 = ['12_0']
+  cam110 = ['11_0']
+  cams_all = ['24_0', '01_0', '20_0', '19_0', '04_1', '19_1', '05_0', '05_1', '14_0', 
+              '08_1', '13_0', '08_0', '09_0', '12_0', '11_0']
+ 
+  # ILLUMINATION (FRONTAL) PROTOCOLS
+  # Protocol M: Enrol: No flash; Probe: No flash
+  if illuminations:
+    world = [([1,2,3,4], [1], cam051, shots), ([4], [2], cam051, shots)]
+    enrol = [([1], [1], cam051, shot0)]
+    probe = [([2,3,4], [1], cam051, shot0), ([4], [2], cam051, shot0)]
+    protocol_definitions['M'] = [world, enrol, probe]
+
+    # Protocol U: Enrol: No flash; Probe: No flash + Any flash
+    world = [([1,2,3,4], [1], cam051, shots), ([4], [2], cam051, shots)]
+    enrol = [([1], [1], cam051, shot0)]
+    probe = [([2,3,4], [1], cam051, shots), ([4], [2], cam051, shots)]
+    protocol_definitions['U'] = [world, enrol, probe]
+
+    # Protocol G: Enrol: No flash + Any flash; Probe: No flash + Any flash
+    world = [([1,2,3,4], [1], cam051, shots), ([4], [2], cam051, shots)]
+    enrol = [([1], [1], cam051, shots)]
+    probe = [([2,3,4], [1], cam051, shots), ([4], [2], cam051, shots)]
+    protocol_definitions['G'] = [world, enrol, probe]
+
+  # POSE PROTOCOLS
+  if poses:
+    # Protocol P051: Enrol: 05_1; Probe: 05_1 (FRONTAL, SAME as 'M", except for the world set)
+    world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
+    enrol = [([1], [1], cam051, shot0)]
+    probe = [([2,3,4], [1], cam051, shot0), ([4], [2], cam051, shot0)]
+    protocol_definitions['P051'] = [world, enrol, probe]
+
+    # Protocol P050: Enrol: 05_1; Probe: 05_0
+    world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
+    enrol = [([1], [1], cam051, shot0)]
+    probe = [([2,3,4], [1], cam050, shot0), ([4], [2], cam050, shot0)]
+    protocol_definitions['P050'] = [world, enrol, probe]
+
+    # Protocol P140: Enrol: 05_1; Probe: 14_0
+    world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
+    enrol = [([1], [1], cam051, shot0)]
+    probe = [([2,3,4], [1], cam140, shot0), ([4], [2], cam140, shot0)]
+    protocol_definitions['P140'] = [world, enrol, probe]
+
+    # Protocol P041: Enrol: 05_1; Probe: 04_1
+    world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
+    enrol = [([1], [1], cam051, shot0)]
+    probe = [([2,3,4], [1], cam041, shot0), ([4], [2], cam041, shot0)]
+    protocol_definitions['P041'] = [world, enrol, probe]
+
+    # Protocol P130: Enrol: 05_1; Probe: 13_0
+    world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
+    enrol = [([1], [1], cam051, shot0)]
+    probe = [([2,3,4], [1], cam130, shot0), ([4], [2], cam130, shot0)]
+    protocol_definitions['P130'] = [world, enrol, probe]
+
+    # Protocol P110: Enrol: 05_1; Probe: 11_0
+    world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
+    enrol = [([1], [1], cam051, shot0)]
+    probe = [([2,3,4], [1], cam110, shot0), ([4], [2], cam110, shot0)]
+    protocol_definitions['P110'] = [world, enrol, probe]
+
+    # Protocol P240: Enrol: 05_1; Probe: 24_0
+    world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
+    enrol = [([1], [1], cam051, shot0)]
+    probe = [([2,3,4], [1], cam240, shot0), ([4], [2], cam240, shot0)]
+    protocol_definitions['P240'] = [world, enrol, probe]
+
+  # 2. ADDITIONS TO THE SQL DATABASE
+  protocolPurpose_list = [('world', 'train'), ('dev', 'enrol'), ('dev', 'probe'), ('eval', 'enrol'), ('eval', 'probe')]
+  for proto in protocol_definitions:
+    p = Protocol(proto)
+    # Add protocol
+    if verbose: print "Adding protocol %s..." % (proto)
     session.add(p)
     session.flush()
     session.refresh(p)
-    for camera_id, shot_id in camera_shot_ids:
-      session.add(ProtocolMultiview(p.id, camera_id, shot_id))
 
-  # TODO: world subset
+    # Add protocol purposes
+    for key in range(len(protocolPurpose_list)):
+      purpose = protocolPurpose_list[key]
+      pu = ProtocolPurpose(p.id, purpose[0], purpose[1])
+      if verbose: print "  Adding protocol purpose ('%s','%s')..." % (purpose[0], purpose[1])
+      session.add(pu)
+      session.flush()
+      session.refresh(pu)
 
-  # ILLUMINATION (FRONTAL) PROTOCOLS
-  cam_shot0 = [('05_1', 0)]
-  cam_shot = [('05_1',  0), ('05_1',  1), ('05_1',  2), ('05_1',  3), ('05_1',  4), 
-              ('05_1',  5), ('05_1',  6), ('05_1',  7), ('05_1',  8), ('05_1',  9), 
-              ('05_1', 10), ('05_1', 11), ('05_1', 12), ('05_1', 13), ('05_1', 14), 
-              ('05_1', 15), ('05_1', 16), ('05_1', 17), ('05_1', 18)] #('05_1', 19)
+       # Add files attached with this protocol purpose
+      client_group = ""
+      prop_list = []
+      if(key == 0): client_group = "world"
+      elif(key == 1 or key == 2): client_group = "dev"
+      elif(key == 3 or key == 4): client_group = "eval"
+      if(key == 0):
+        prop_list = protocol_definitions[proto][0]
+      elif(key == 1 or key == 3): 
+        prop_list = protocol_definitions[proto][1]
+      elif(key == 2 or key == 4): 
+        prop_list = protocol_definitions[proto][2]
 
-  # Protocol M: Enrol: No flash; Probe: No flash
-  session.add(ProtocolName('M'))
-  addProtocolMultiview(session, 'M', 'dev', 'enrol', 1, 1, cam_shot0)
-  addProtocolMultiview(session, 'M', 'dev', 'probe', 2, 1, cam_shot0)
-  addProtocolMultiview(session, 'M', 'dev', 'probe', 3, 1, cam_shot0)
-  addProtocolMultiview(session, 'M', 'dev', 'probe', 4, 1, cam_shot0)
-  addProtocolMultiview(session, 'M', 'dev', 'probe', 4, 2, cam_shot0)
+      # Adds 'protocol' files
+      for el in prop_list:
+        sids = el[0] # list of session_ids
+        rids = el[1] # list of recording_ids
+        cams = el[2] # list of camera_ids
+        shot_ids = el[3] # list of shot_ids
+        q = session.query(File).join(Client).join(FileMultiview).\
+              filter(Client.sgroup == client_group)
+        if sids:
+          q = q.filter(File.session_id.in_(sids))
+        if rids:
+          q = q.filter(File.recording_id.in_(rids))
+        if cams:
+          q = q.join(Camera).filter(Camera.name.in_(cams))
+        if shot_ids:
+          q = q.filter(FileMultiview.shot_id.in_(shot_ids))
+        q = q.order_by(File.id)
+        for k in q:
+          if verbose: print "    Adding protocol file '%s'..." % (k.path)
+          pu.files.append(k)
 
-  addProtocolMultiview(session, 'M', 'eval', 'enrol', 1, 1, cam_shot0)
-  addProtocolMultiview(session, 'M', 'eval', 'probe', 2, 1, cam_shot0)
-  addProtocolMultiview(session, 'M', 'eval', 'probe', 3, 1, cam_shot0)
-  addProtocolMultiview(session, 'M', 'eval', 'probe', 4, 1, cam_shot0)
-  addProtocolMultiview(session, 'M', 'eval', 'probe', 4, 2, cam_shot0)
-
-
-  # Protocol U: Enrol: No flash; Probe: No flash + Any flash
-  session.add(ProtocolName('U'))
-  addProtocolMultiview(session, 'U', 'dev', 'enrol', 1, 1, cam_shot0)
-  addProtocolMultiview(session, 'U', 'dev', 'probe', 2, 1, cam_shot)
-  addProtocolMultiview(session, 'U', 'dev', 'probe', 3, 1, cam_shot)
-  addProtocolMultiview(session, 'U', 'dev', 'probe', 4, 1, cam_shot)
-  addProtocolMultiview(session, 'U', 'dev', 'probe', 4, 2, cam_shot)
-
-  addProtocolMultiview(session, 'U', 'eval', 'enrol', 1, 1, cam_shot0)
-  addProtocolMultiview(session, 'U', 'eval', 'probe', 2, 1, cam_shot)
-  addProtocolMultiview(session, 'U', 'eval', 'probe', 3, 1, cam_shot)
-  addProtocolMultiview(session, 'U', 'eval', 'probe', 4, 1, cam_shot)
-  addProtocolMultiview(session, 'U', 'eval', 'probe', 4, 2, cam_shot)
-
-
-  # Protocol G: Enrol: No flash + Any flash; Probe: No flash + Any flash
-  session.add(ProtocolName('G'))
-  addProtocolMultiview(session, 'G', 'dev', 'enrol', 1, 1, cam_shot)
-  addProtocolMultiview(session, 'G', 'dev', 'probe', 2, 1, cam_shot)
-  addProtocolMultiview(session, 'G', 'dev', 'probe', 3, 1, cam_shot)
-  addProtocolMultiview(session, 'G', 'dev', 'probe', 4, 1, cam_shot)
-  addProtocolMultiview(session, 'G', 'dev', 'probe', 4, 2, cam_shot)
-
-  addProtocolMultiview(session, 'G', 'eval', 'enrol', 1, 1, cam_shot)
-  addProtocolMultiview(session, 'G', 'eval', 'probe', 2, 1, cam_shot)
-  addProtocolMultiview(session, 'G', 'eval', 'probe', 3, 1, cam_shot)
-  addProtocolMultiview(session, 'G', 'eval', 'probe', 4, 1, cam_shot)
-  addProtocolMultiview(session, 'G', 'eval', 'probe', 4, 2, cam_shot)
-
-
-  # POSE PROTOCOLS
-  cam240_shot = [('24_0', 0)]
-  cam010_shot = [('01_0', 0)]
-  cam200_shot = [('20_0', 0)]
-  cam190_shot = [('19_0', 0)]
-  cam041_shot = [('04_1', 0)]
- 
-  cam191_shot = [('19_1', 0)]
-  cam050_shot = [('05_0', 0)]
-  cam051_shot = [('05_1', 0)]
-  cam140_shot = [('14_0', 0)]
-  cam081_shot = [('08_1', 0)]
-
-  cam130_shot = [('13_0', 0)]
-  cam080_shot = [('08_0', 0)]
-  cam090_shot = [('09_0', 0)]
-  cam120_shot = [('12_0', 0)]
-  cam110_shot = [('11_0', 0)]
-
-  # Protocol P051: Enrol: 05_1; Probe: 05_1 (FRONTAL, SAME as 'M")
-  session.add(ProtocolName('P051'))
-  addProtocolMultiview(session, 'P051', 'dev', 'enrol', 1, 1, cam051_shot)
-  addProtocolMultiview(session, 'P051', 'dev', 'probe', 2, 1, cam051_shot)
-  addProtocolMultiview(session, 'P051', 'dev', 'probe', 3, 1, cam051_shot)
-  addProtocolMultiview(session, 'P051', 'dev', 'probe', 4, 1, cam051_shot)
-  addProtocolMultiview(session, 'P051', 'dev', 'probe', 4, 2, cam051_shot)
-
-  addProtocolMultiview(session, 'P051', 'eval', 'enrol', 1, 1, cam051_shot)
-  addProtocolMultiview(session, 'P051', 'eval', 'probe', 2, 1, cam051_shot)
-  addProtocolMultiview(session, 'P051', 'eval', 'probe', 3, 1, cam051_shot)
-  addProtocolMultiview(session, 'P051', 'eval', 'probe', 4, 1, cam051_shot)
-  addProtocolMultiview(session, 'P051', 'eval', 'probe', 4, 2, cam051_shot)
-
-  # Protocol P050: Enrol: 05_1; Probe: 05_0
-  session.add(ProtocolName('P050'))
-  addProtocolMultiview(session, 'P050', 'dev', 'enrol', 1, 1, cam051_shot)
-  addProtocolMultiview(session, 'P050', 'dev', 'probe', 2, 1, cam050_shot)
-  addProtocolMultiview(session, 'P050', 'dev', 'probe', 3, 1, cam050_shot)
-  addProtocolMultiview(session, 'P050', 'dev', 'probe', 4, 1, cam050_shot)
-  addProtocolMultiview(session, 'P050', 'dev', 'probe', 4, 2, cam050_shot)
-
-  addProtocolMultiview(session, 'P050', 'eval', 'enrol', 1, 1, cam051_shot)
-  addProtocolMultiview(session, 'P050', 'eval', 'probe', 2, 1, cam050_shot)
-  addProtocolMultiview(session, 'P050', 'eval', 'probe', 3, 1, cam050_shot)
-  addProtocolMultiview(session, 'P050', 'eval', 'probe', 4, 1, cam050_shot)
-  addProtocolMultiview(session, 'P050', 'eval', 'probe', 4, 2, cam050_shot)
-
-  # Protocol P140: Enrol: 05_1; Probe: 14_0
-  session.add(ProtocolName('P140'))
-  addProtocolMultiview(session, 'P140', 'dev', 'enrol', 1, 1, cam051_shot)
-  addProtocolMultiview(session, 'P140', 'dev', 'probe', 2, 1, cam140_shot)
-  addProtocolMultiview(session, 'P140', 'dev', 'probe', 3, 1, cam140_shot)
-  addProtocolMultiview(session, 'P140', 'dev', 'probe', 4, 1, cam140_shot)
-  addProtocolMultiview(session, 'P140', 'dev', 'probe', 4, 2, cam140_shot)
-
-  addProtocolMultiview(session, 'P140', 'eval', 'enrol', 1, 1, cam051_shot)
-  addProtocolMultiview(session, 'P140', 'eval', 'probe', 2, 1, cam140_shot)
-  addProtocolMultiview(session, 'P140', 'eval', 'probe', 3, 1, cam140_shot)
-  addProtocolMultiview(session, 'P140', 'eval', 'probe', 4, 1, cam140_shot)
-  addProtocolMultiview(session, 'P140', 'eval', 'probe', 4, 2, cam140_shot)
-
-  # Protocol P041: Enrol: 05_1; Probe: 04_1
-  session.add(ProtocolName('P041'))
-  addProtocolMultiview(session, 'P041', 'dev', 'enrol', 1, 1, cam051_shot)
-  addProtocolMultiview(session, 'P041', 'dev', 'probe', 2, 1, cam041_shot)
-  addProtocolMultiview(session, 'P041', 'dev', 'probe', 3, 1, cam041_shot)
-  addProtocolMultiview(session, 'P041', 'dev', 'probe', 4, 1, cam041_shot)
-  addProtocolMultiview(session, 'P041', 'dev', 'probe', 4, 2, cam041_shot)
-
-  addProtocolMultiview(session, 'P041', 'eval', 'enrol', 1, 1, cam051_shot)
-  addProtocolMultiview(session, 'P041', 'eval', 'probe', 2, 1, cam041_shot)
-  addProtocolMultiview(session, 'P041', 'eval', 'probe', 3, 1, cam041_shot)
-  addProtocolMultiview(session, 'P041', 'eval', 'probe', 4, 1, cam041_shot)
-  addProtocolMultiview(session, 'P041', 'eval', 'probe', 4, 2, cam041_shot)
-
-  # Protocol P130: Enrol: 05_1; Probe: 13_0
-  session.add(ProtocolName('P130'))
-  addProtocolMultiview(session, 'P130', 'dev', 'enrol', 1, 1, cam051_shot)
-  addProtocolMultiview(session, 'P130', 'dev', 'probe', 2, 1, cam130_shot)
-  addProtocolMultiview(session, 'P130', 'dev', 'probe', 3, 1, cam130_shot)
-  addProtocolMultiview(session, 'P130', 'dev', 'probe', 4, 1, cam130_shot)
-  addProtocolMultiview(session, 'P130', 'dev', 'probe', 4, 2, cam130_shot)
-
-  addProtocolMultiview(session, 'P130', 'eval', 'enrol', 1, 1, cam051_shot)
-  addProtocolMultiview(session, 'P130', 'eval', 'probe', 2, 1, cam130_shot)
-  addProtocolMultiview(session, 'P130', 'eval', 'probe', 3, 1, cam130_shot)
-  addProtocolMultiview(session, 'P130', 'eval', 'probe', 4, 1, cam130_shot)
-  addProtocolMultiview(session, 'P130', 'eval', 'probe', 4, 2, cam130_shot)
-
-
-  # Protocol P110 (left profile): Enrol: 05_1; Probe: 11_0
-  session.add(ProtocolName('P110'))
-  addProtocolMultiview(session, 'P110', 'dev', 'enrol', 1, 1, cam051_shot)
-  addProtocolMultiview(session, 'P110', 'dev', 'probe', 2, 1, cam110_shot)
-  addProtocolMultiview(session, 'P110', 'dev', 'probe', 3, 1, cam110_shot)
-  addProtocolMultiview(session, 'P110', 'dev', 'probe', 4, 1, cam110_shot)
-  addProtocolMultiview(session, 'P110', 'dev', 'probe', 4, 2, cam110_shot)
-
-  addProtocolMultiview(session, 'P110', 'eval', 'enrol', 1, 1, cam051_shot)
-  addProtocolMultiview(session, 'P110', 'eval', 'probe', 2, 1, cam110_shot)
-  addProtocolMultiview(session, 'P110', 'eval', 'probe', 3, 1, cam110_shot)
-  addProtocolMultiview(session, 'P110', 'eval', 'probe', 4, 1, cam110_shot)
-  addProtocolMultiview(session, 'P110', 'eval', 'probe', 4, 2, cam110_shot)
-
-  # Protocol P240 (right profile): Enrol: 05_1; Probe: 24_0
-  session.add(ProtocolName('P240'))
-  addProtocolMultiview(session, 'P240', 'dev', 'enrol', 1, 1, cam051_shot)
-  addProtocolMultiview(session, 'P240', 'dev', 'probe', 2, 1, cam240_shot)
-  addProtocolMultiview(session, 'P240', 'dev', 'probe', 3, 1, cam240_shot)
-  addProtocolMultiview(session, 'P240', 'dev', 'probe', 4, 1, cam240_shot)
-  addProtocolMultiview(session, 'P240', 'dev', 'probe', 4, 2, cam240_shot)
-
-  addProtocolMultiview(session, 'P240', 'eval', 'enrol', 1, 1, cam051_shot)
-  addProtocolMultiview(session, 'P240', 'eval', 'probe', 2, 1, cam240_shot)
-  addProtocolMultiview(session, 'P240', 'eval', 'probe', 3, 1, cam240_shot)
-  addProtocolMultiview(session, 'P240', 'eval', 'probe', 4, 1, cam240_shot)
-  addProtocolMultiview(session, 'P240', 'eval', 'probe', 4, 2, cam240_shot)
-
-
-def add_expressions(session):
-  """Adds expressions"""
-
-  session.add(Expression('neutral', 'multiview', 1, 1))
-  session.add(Expression('smile', 'multiview', 1, 2))
-  session.add(Expression('neutral', 'multiview', 2, 1))
-  session.add(Expression('surprise', 'multiview', 2, 2))
-  session.add(Expression('squint', 'multiview', 2, 3))
-  session.add(Expression('neutral', 'multiview', 3, 1))
-  session.add(Expression('smile', 'multiview', 3, 2))
-  session.add(Expression('disgust', 'multiview', 3, 3))
-  session.add(Expression('neutral', 'multiview', 4, 1))
-  session.add(Expression('neutral', 'multiview', 4, 2))
-  session.add(Expression('scream', 'multiview', 4, 3))
-  session.add(Expression('neutral', 'highres', 1, 1))
-  session.add(Expression('smile', 'highres', 1, 2))
-  session.add(Expression('neutral', 'highres', 2, 1))
-  session.add(Expression('neutral', 'highres', 3, 1))
-  session.add(Expression('neutral', 'highres', 4, 1))
-
-def add_fileprotocol(session):
-  """Adds FileProcotol entries"""
-  groups_de = ('dev','eval')
-  purposes = ('enrol', 'probe')
-  q = session.query(File.id, File.path, File.client_id, ProtocolName.name, Protocol.id, Protocol.purpose, ProtocolMultiview.id).\
-        join(FileMultiview).join(Client).\
-        filter(Client.sgroup.in_(groups_de)).\
-        filter(and_(ProtocolName.name == Protocol.name, Protocol.sgroup == Client.sgroup,
-                    Protocol.img_type == 'multiview',
-                    Protocol.session_id == File.session_id, Protocol.recording_id == File.recording_id,
-                    Protocol.purpose.in_(purposes))).\
-        filter(and_(Protocol.id == ProtocolMultiview.protocol_id,
-                    ProtocolMultiview.camera_id == FileMultiview.camera_id,
-                    ProtocolMultiview.shot_id == FileMultiview.shot_id)).\
-        order_by(ProtocolName.name, File.client_id, File.session_id, File.recording_id, FileMultiview.camera_id, FileMultiview.shot_id)
-  for k in q:
-    session.add(FileProtocol(k[0], k.name, k.purpose))
-
-  protocols_I = ('M', 'U', 'G')
-  q = session.query(File.id, File.path, File.client_id, Expression.name).join(FileMultiview).join(Client).\
-        filter(Client.sgroup == 'world').\
-        filter(Expression.name == 'neutral').\
-        filter(and_(File.img_type == 'multiview', FileMultiview.camera_id == '05_1', File.session_id == Expression.session_id,
-                    File.recording_id == Expression.recording_id, Expression.img_type == 'multiview', FileMultiview.shot_id != 19)).\
-        order_by(File.client_id, File.session_id, File.recording_id, FileMultiview.camera_id, FileMultiview.shot_id)
-  for k in q:
-    for prot in protocols_I:
-      session.add(FileProtocol(k[0], prot, 'world'))
-  
-  protocols_P = ('P051', 'P050', 'P140', 'P041', 'P130', 'P110', 'P240')
-  cameras_P = ('05_1', '05_0', '14_0', '04_1', '13_0', '11_0', '24_0')
-  for prot in range(len(protocols_P)):
-    cams = []
-    if prot == 0: cams = ['05_1']
-    else: cams = ['05_1', cameras_P[prot]]
-    q = session.query(File.id, File.path, File.client_id, Expression.name).join(FileMultiview).join(Client).\
-          filter(Client.sgroup == 'world').\
-          filter(Expression.name == 'neutral').\
-          filter(and_(File.img_type == 'multiview', FileMultiview.camera_id.in_(cams), File.session_id == Expression.session_id,
-                      File.recording_id == Expression.recording_id, Expression.img_type == 'multiview', FileMultiview.shot_id == 0)).\
-          order_by(File.client_id, File.session_id, File.recording_id, FileMultiview.camera_id, FileMultiview.shot_id)
-    for k in q:
-      session.add(FileProtocol(k[0], protocols_P[prot], 'world'))
- 
 def create_tables(args):
   """Creates all necessary tables (only to be used at the first time)"""
 
   from bob.db.utils import create_engine_try_nolock
 
   engine = create_engine_try_nolock(args.type, args.files[0], echo=(args.verbose >= 2))
-  File.metadata.create_all(engine)
-  FileMultiview.metadata.create_all(engine)
-  Client.metadata.create_all(engine)
-  SubworldClient.metadata.create_all(engine)
-  Expression.metadata.create_all(engine)
-  ProtocolName.metadata.create_all(engine)
-  Protocol.metadata.create_all(engine)
-  ProtocolMultiview.metadata.create_all(engine)
-  FileProtocol.metadata.create_all(engine)
+  Base.metadata.create_all(engine)
 
 # Driver API
 # ==========
@@ -460,12 +409,10 @@ def create(args):
   # the real work...
   create_tables(args)
   s = session_try_nolock(args.type, args.files[0], echo=(args.verbose >= 2))
-  add_clients(s, args.subjectlist)
-  add_subworldclients(s)
-  add_files(s, args.imagedir, args.all_poses)
-  add_protocols(s)
-  add_expressions(s)
-  add_fileprotocol(s)
+  add_clients(s, args.subjectlist, args.verbose)
+  add_subworlds(s, args.verbose)
+  add_files(s, args.imagedir, not args.noilluminations, args.poses, args.expressions, args.highresolutions, args.verbose)
+  add_protocols(s, not args.noilluminations, args.poses, args.expressions, args.highresolutions, args.verbose)
   s.commit()
   s.close()
 
@@ -484,7 +431,13 @@ def add_command(subparsers):
   parser.add_argument('--subjectlist', action='store',
       default='/idiap/resource/database/Multi-Pie/meta/subject_list.txt',
       help="Change the file containing the subject list of the Multi-PIE database (defaults to %(default)s)")
-  parser.add_argument('--all_poses', action='store_true', default=False,
-      help="If not set, it will create the database for frontal faces only")
+  parser.add_argument('-I', '--noilluminations', action='store_true', default=False,
+      help="If set, it will not add the illumination files (and corresponding protocols) in the database")
+  parser.add_argument('-P', '--poses', action='store_true', default=False,
+      help="If set, it will add the pose files (and corresponding protocols) in the database")
+  parser.add_argument('-E', '--expressions', action='store_true', default=False,
+      help="If set, it will add the expression files (and corresponding protocols) in the database")
+  parser.add_argument('-H', '--highresolutions', action='store_true', default=False,
+      help="If set, it will add the high-resolution files (and corresponding protocols) in the database")
   
   parser.set_defaults(func=create) #action

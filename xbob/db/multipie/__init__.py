@@ -6,5 +6,6 @@
 """
 
 from .query import Database
+from .models import Client, Subworld, File, FileMultiview, Expression, Camera, Protocol, ProtocolPurpose
 
-__all__ = ['Database']
+__all__ = dir()
