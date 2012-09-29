@@ -35,7 +35,7 @@ class Client(Base):
   # Birthyear of the client
   birthyear = Column(Integer)
   # Gender to which the client belongs to
-  gender_choices = ('m','f')
+  gender_choices = ('male','female')
   gender = Column(Enum(*gender_choices))
   first_session = Column(Integer)
   second_session = Column(Integer)
@@ -236,7 +236,7 @@ class ProtocolPurpose(Base):
   # Id of the protocol associated with this protocol purpose object
   protocol_id = Column(Integer, ForeignKey('protocol.id')) # for SQL
   # Group associated with this protocol purpose object
-  group_choices = ('world', 'dev', 'eval')
+  group_choices = Client.group_choices
   sgroup = Column(Enum(*group_choices))
   # Purpose associated with this protocol purpose object
   purpose_choices = ('train', 'enrol', 'probe')

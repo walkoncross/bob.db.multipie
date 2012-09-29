@@ -61,17 +61,9 @@ class Database(object):
     return ProtocolPurpose.group_choices # Same as Client.group_choices for this database
 
   def genders(self):
-    """Returns the list of genders: 'm' for male and 'f' for female"""
+    """Returns the list of genders"""
 
     return Client.gender_choices
-
-  def subworld_names(self):
-    """Returns all registered subworld names"""
-
-    self.assert_validity()
-    l = self.subworlds()
-    retval = [str(k.name) for k in l]
-    return retval
 
   def subworlds(self):
     """Returns the list of subworlds"""
@@ -153,7 +145,7 @@ class Database(object):
       In order to be considered, "world" should be in groups.
 
     gender
-      The genders to which the clients belong ('f', 'm')
+      The genders to which the clients belong ('female', 'male')
 
     birthyear
       The birth year of the clients (in the range [1900,2050])
@@ -333,7 +325,7 @@ class Database(object):
       default), it is considered the same as a tuple with all possible values.
   
     subworld
-      Specify a split of the world data ("sub41", "sub81", "sub121, "sub161", "")
+      Specify a split of the world data ('sub41', 'sub81', 'sub121', 'sub161')
       In order to be considered, "world" should be in groups.
 
     expressions
@@ -401,7 +393,7 @@ class Database(object):
     classes = self.__check_validity__(classes, 'class', VALID_CLASSES, VALID_CLASSES)
     if subworld: subworld = self.__check_validity__(subworld, 'subworld', VALID_SUBWORLDS, VALID_SUBWORLDS)
     if expressions: expressions = self.__check_validity__(expressions, 'expression', VALID_EXPRESSIONS, VALID_EXPRESSIONS)
-    if cameras: cameras = self.__check_validity__(world_cameras, 'camera', VALID_CAMERAS, VALID_CAMERAS)
+    if cameras: cameras = self.__check_validity__(cameras, 'camera', VALID_CAMERAS, VALID_CAMERAS)
 
     import collections
     if(model_ids is None):
@@ -417,9 +409,9 @@ class Database(object):
       if subworld:
         q = q.join(Subworld, Client.subworld).filter(Subworld.name.in_(subworld))
       if expressions: 
-        q.join(Expression).filter(Expression.name.in_(expressions))
+        q = q.join(Expression).filter(Expression.name.in_(expressions))
       if cameras: 
-        q.join(Camera).filter(Camera.name.in_(cameras))
+        q = q.join(FileMultiview).join(Camera).filter(Camera.name.in_(cameras))
       if(world_nshots):
         max1 = 19
         max2 = 19
@@ -477,9 +469,9 @@ class Database(object):
         q = self.session.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
               filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup.in_(groups), ProtocolPurpose.purpose == 'enrol'))
         if expressions: 
-          q.join(Expression).filter(Expression.name.in_(expressions))
+          q = q.join(Expression).filter(Expression.name.in_(expressions))
         if cameras: 
-          q.join(Camera).filter(Camera.name.in_(cameras))
+          q = q.join(FileMultiview).join(Camera).filter(Camera.name.in_(cameras))
         if model_ids:
           q = q.filter(Client.id.in_(model_ids))
         q = q.order_by(File.client_id, File.session_id, File.recording_id, File.id)
@@ -490,9 +482,9 @@ class Database(object):
           q = self.session.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
                 filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup.in_(groups), ProtocolPurpose.purpose == 'probe'))
           if expressions: 
-            q.join(Expression).filter(Expression.name.in_(expressions))
+            q = q.join(Expression).filter(Expression.name.in_(expressions))
           if cameras: 
-            q.join(Camera).filter(Camera.name.in_(cameras))
+            q = q.join(FileMultiview).join(Camera).filter(Camera.name.in_(cameras))
           if model_ids:
             q = q.filter(Client.id.in_(model_ids))
           q = q.order_by(File.client_id, File.session_id, File.recording_id, File.id)
@@ -502,9 +494,9 @@ class Database(object):
           q = self.session.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
                 filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup.in_(groups), ProtocolPurpose.purpose == 'probe'))
           if expressions: 
-            q.join(Expression).filter(Expression.name.in_(expressions))
+            q = q.join(Expression).filter(Expression.name.in_(expressions))
           if cameras: 
-            q.join(Camera).filter(Camera.name.in_(cameras))
+            q = q.join(FileMultiview).join(Camera).filter(Camera.name.in_(cameras))
           if len(model_ids) == 1:
             q = q.filter(not_(Client.id.in_(model_ids)))
           q = q.order_by(File.client_id, File.session_id, File.recording_id, File.id)

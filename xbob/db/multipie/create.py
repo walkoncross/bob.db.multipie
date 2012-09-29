@@ -32,9 +32,9 @@ def add_clients(session, filelist, verbose):
 
     v = client_string.split(' ')
     if (v[2] == 'Male'):
-      v[2] = 'm'
+      v[2] = 'male'
     elif (v[2] == 'Female'):
-      v[2] = 'f'
+      v[2] = 'female'
     v[6] = v[6].rstrip() # chomp new line
     first_session = 0
     second_session = 0
