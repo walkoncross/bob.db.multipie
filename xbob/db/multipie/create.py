@@ -18,14 +18,14 @@ def add_clients(session, filelist, verbose):
   """Add files (and clients) to the Multi-PIE database."""
 
   # Define development and evaluation set in term of client ids
-  dev_ids =   [2, 4, 6, 8, 10, 15, 18, 20, 22, 27, 33, 35, 38, 40, 42, 46, 48, 50, 52, 54, 57, 64, 68, 69, 71, 78, 80, 85, 97, 102, 
-              105, 107, 110, 111, 115, 118, 123, 125, 126, 128, 132, 137, 139, 143, 149, 157, 167, 169, 170, 177, 184, 186, 190, 191, 
+  dev_ids =   [2, 4, 6, 8, 10, 15, 18, 20, 22, 27, 33, 35, 38, 40, 42, 46, 48, 50, 52, 54, 57, 64, 68, 69, 71, 78, 80, 85, 97, 102,
+              105, 107, 110, 111, 115, 118, 123, 125, 126, 128, 132, 137, 139, 143, 149, 157, 167, 169, 170, 177, 184, 186, 190, 191,
               193, 198, 202, 205, 208, 220, 227, 235, 241, 248]
 
   eval_ids =  [3, 5, 9, 11, 14, 17, 19, 23, 28, 29, 34, 36, 41, 43, 44, 47, 49, 53, 55, 56, 62, 67, 70, 74, 76, 79, 83, 100, 103, 104,
-              106, 108, 112, 116, 117, 122, 124, 127, 129, 131, 133, 138, 145, 150, 156, 161, 168, 175, 178, 181, 185, 188, 192, 194, 
+              106, 108, 112, 116, 117, 122, 124, 127, 129, 131, 133, 138, 145, 150, 156, 161, 168, 175, 178, 181, 185, 188, 192, 194,
               196, 199, 203, 209, 223, 225, 230, 236, 240, 246, 250]
- 
+
   def add_client(session, client_string, client_dict, verbose):
     """Parse a single client string and add its content to the database.
        Also add a client entry if not already in the database."""
@@ -40,7 +40,7 @@ def add_clients(session, filelist, verbose):
     second_session = 0
     third_session = 0
     fourth_session = 0
-    if(v[3] == '1'): 
+    if(v[3] == '1'):
       first_session = 1
       if(v[4] == '1'):
         second_session = 2
@@ -56,7 +56,7 @@ def add_clients(session, filelist, verbose):
           third_session = 4
       elif(v[6] == '1'):
         second_session = 4
-    elif(v[4] == '1'): 
+    elif(v[4] == '1'):
       first_session = 2
       if(v[5] == '1'):
         second_session = 3
@@ -64,11 +64,11 @@ def add_clients(session, filelist, verbose):
           third_session = 4
       elif(v[6] == '1'):
         second_session = 4
-    elif(v[5] == '1'): 
+    elif(v[5] == '1'):
       first_session = 3
       if(v[6] == '1'):
         second_session = 4
-    elif(v[6] == '1'): 
+    elif(v[6] == '1'):
       first_session = 4
     #TODO: if first_session == 0: raises an error
 
@@ -79,8 +79,8 @@ def add_clients(session, filelist, verbose):
       if verbose: print "Adding client '%d' ..." % int(v[0])
       session.add(Client(int(v[0]), group, int(v[1]), v[2], first_session, second_session, third_session, fourth_session))
       client_dict[v[0]] = True
-  
-  client_dict = {} 
+
+  client_dict = {}
   for line in fileinput.input(filelist):
     add_client(session, line, client_dict, verbose)
 
@@ -88,29 +88,29 @@ def add_subworlds(session, verbose):
   """Adds splits in the world set, based on the client ids"""
 
   # Lists for the subworld subsets
-  l41 =  [ 21,  26,  31,  39,  66,  75,  81,  90,  98, 109, 114, 148, 152, 158, 165, 171, 174, 179, 182, 197, 
-          207, 215, 226, 239, 244, 256, 271, 277, 303, 309, 310, 315, 321, 326, 327, 333, 336, 338, 339, 341, 
+  l41 =  [ 21,  26,  31,  39,  66,  75,  81,  90,  98, 109, 114, 148, 152, 158, 165, 171, 174, 179, 182, 197,
+          207, 215, 226, 239, 244, 256, 271, 277, 303, 309, 310, 315, 321, 326, 327, 333, 336, 338, 339, 341,
           342]
   l81 =  [ 16,  21,  26,  31,  37,  39,  51,  65,  66,  73,  75,  81,  84,  86,  87,  90,  94,  95,  98,  99,
-          109, 114, 134, 142, 144, 148, 151, 152, 158, 164, 165, 171, 173, 174, 179, 182, 195, 197, 207, 215, 
-          217, 222, 226, 239, 244, 247, 249, 251, 256, 259, 260, 263, 264, 265, 271, 272, 276, 277, 287, 298, 
-          303, 304, 306, 309, 310, 312, 315, 317, 319, 320, 321, 324, 326, 327, 329, 333, 336, 338, 339, 341, 
+          109, 114, 134, 142, 144, 148, 151, 152, 158, 164, 165, 171, 173, 174, 179, 182, 195, 197, 207, 215,
+          217, 222, 226, 239, 244, 247, 249, 251, 256, 259, 260, 263, 264, 265, 271, 272, 276, 277, 287, 298,
+          303, 304, 306, 309, 310, 312, 315, 317, 319, 320, 321, 324, 326, 327, 329, 333, 336, 338, 339, 341,
           342]
-  l121 = [  7,  16,  21,  24,  26,  30,  31,  37,  39,  51,  60,  61,  63,  65,  66,  72,  73,  75,  81,  84, 
-           86,  87,  90,  91,  94,  95,  96,  98,  99, 109, 114, 134, 135, 142, 144, 148, 151, 152, 158, 159, 
-          164, 165, 166, 171, 173, 174, 176, 179, 180, 182, 195, 197, 207, 210, 214, 215, 217, 221, 222, 226, 
+  l121 = [  7,  16,  21,  24,  26,  30,  31,  37,  39,  51,  60,  61,  63,  65,  66,  72,  73,  75,  81,  84,
+           86,  87,  90,  91,  94,  95,  96,  98,  99, 109, 114, 134, 135, 142, 144, 148, 151, 152, 158, 159,
+          164, 165, 166, 171, 173, 174, 176, 179, 180, 182, 195, 197, 207, 210, 214, 215, 217, 221, 222, 226,
           228, 231, 233, 234, 239, 242, 244, 247, 249, 251, 253, 254, 255, 256, 259, 260, 263, 264, 265, 268,
-          271, 272, 276, 277, 278, 279, 285, 287, 291, 292, 293, 294, 297, 298, 300, 301, 303, 304, 306, 309, 
-          310, 311, 312, 315, 317, 319, 320, 321, 322, 324, 325, 326, 327, 329, 333, 336, 338, 339, 341, 342, 
+          271, 272, 276, 277, 278, 279, 285, 287, 291, 292, 293, 294, 297, 298, 300, 301, 303, 304, 306, 309,
+          310, 311, 312, 315, 317, 319, 320, 321, 322, 324, 325, 326, 327, 329, 333, 336, 338, 339, 341, 342,
           344]
-  l161 = [  7,  12,  13,  16,  21,  24,  26,  30,  31,  37,  39,  45,  51,  60,  61,  63,  65,  66,  72,  73, 
+  l161 = [  7,  12,  13,  16,  21,  24,  26,  30,  31,  37,  39,  45,  51,  60,  61,  63,  65,  66,  72,  73,
            75,  77,  81,  82,  84,  86,  87,  88,  90,  91,  93,  94,  95,  96,  98,  99, 101, 109, 114, 119,
-          120, 121, 134, 135, 136, 142, 144, 148, 151, 152, 153, 158, 159, 160, 162, 163, 164, 165, 166, 171, 
-          173, 174, 176, 179, 180, 182, 187, 195, 197, 200, 207, 210, 214, 215, 216, 217, 218, 219, 221, 222, 
-          226, 228, 229, 231, 233, 234, 237, 239, 242, 244, 247, 249, 251, 253, 254, 255, 256, 257, 259, 260, 
-          261, 263, 264, 265, 267, 268, 271, 272, 273, 276, 277, 278, 279, 285, 287, 289, 291, 292, 293, 294, 
-          295, 296, 297, 298, 299, 300, 301, 303, 304, 306, 308, 309, 310, 311, 312, 313, 314, 315, 317, 319, 
-          320, 321, 322, 323, 324, 325, 326, 327, 329, 333, 335, 336, 337, 338, 339, 341, 342, 343, 344, 345, 
+          120, 121, 134, 135, 136, 142, 144, 148, 151, 152, 153, 158, 159, 160, 162, 163, 164, 165, 166, 171,
+          173, 174, 176, 179, 180, 182, 187, 195, 197, 200, 207, 210, 214, 215, 216, 217, 218, 219, 221, 222,
+          226, 228, 229, 231, 233, 234, 237, 239, 242, 244, 247, 249, 251, 253, 254, 255, 256, 257, 259, 260,
+          261, 263, 264, 265, 267, 268, 271, 272, 273, 276, 277, 278, 279, 285, 287, 289, 291, 292, 293, 294,
+          295, 296, 297, 298, 299, 300, 301, 303, 304, 306, 308, 309, 310, 311, 312, 313, 314, 315, 317, 319,
+          320, 321, 322, 323, 324, 325, 326, 327, 329, 333, 335, 336, 337, 338, 339, 341, 342, 343, 344, 345,
           346]
   snames = ['sub41', 'sub81', 'sub121', 'sub161']
   slist = [l41, l81, l121, l161]
@@ -127,7 +127,7 @@ def add_subworlds(session, verbose):
 
 def add_files(session, imagedir, illuminations, poses, expressions, highresolutions, verbose):
   """Add files (and clients) to the Multi-PIE database."""
-  
+
   def add_mv_file(session, filename, session_id, client_id, recording_id, camera_name, expr_dict, cam_dict, expressions, verbose):
     """Parse a single filename and add it to the list.
        Also add a client entry if not already in the database."""
@@ -148,7 +148,7 @@ def add_files(session, imagedir, illuminations, poses, expressions, highresoluti
         session.flush()
         session.refresh(f)
         session.add(FileMultiview(f.id, shot_id, cid))
- 
+
   def add_hr_file(session, filename, session_id, client_id, expr_dict, expressions, verbose):
     """Parse a single filename and add it to the list.
        Also add a client entry if not already in the database."""
@@ -182,7 +182,7 @@ def add_files(session, imagedir, illuminations, poses, expressions, highresoluti
   def add_cameras(session, verbose):
     """Adds cameras"""
 
-    cam_list = ['24_0', '01_0', '20_0', '19_0', '04_1', '19_1', '05_0', '05_1', '14_0', '08_1', 
+    cam_list = ['24_0', '01_0', '20_0', '19_0', '04_1', '19_1', '05_0', '05_1', '14_0', '08_1',
                 '13_0', '08_0', '09_0', '12_0', '11_0']
     cam_dict = {}
     for el in cam_list:
@@ -193,7 +193,7 @@ def add_files(session, imagedir, illuminations, poses, expressions, highresoluti
       session.refresh(c)
       cam_dict[el] = c.id
     return cam_dict
-  
+
   # Start by creating the expressions and the cameras
   expr_dict = add_expressions(session, verbose)
   cam_dict = add_cameras(session, verbose)
@@ -220,7 +220,7 @@ def add_files(session, imagedir, illuminations, poses, expressions, highresoluti
           # flashes/images
           for filename in filter(nodot, os.listdir(camera_dir)):
             basename, extension = os.path.splitext(filename)
-            add_mv_file(session, os.path.join( session_id, 'multiview', client_id, recording_id, camera_name, basename), session_id, client_id, 
+            add_mv_file(session, os.path.join( session_id, 'multiview', client_id, recording_id, camera_name, basename), session_id, client_id,
                         recording_id, camera_name, expr_dict, cam_dict, expressions, verbose)
 
     if highresolutions:
@@ -238,7 +238,7 @@ def add_protocols(session, illuminations, poses, expressions, highresolutions, v
   """Adds protocols"""
 
   # 1. DEFINITIONS
-  # Tuples in the lists correspond to (session_ids, recording_ids, cameras, shot_ids), 
+  # Tuples in the lists correspond to (session_ids, recording_ids, cameras, shot_ids),
   # [] value indicates all sessions/recordings/cameras/shots.
   protocol_definitions = {}
 
@@ -260,9 +260,12 @@ def add_protocols(session, illuminations, poses, expressions, highresolutions, v
   cam090 = ['09_0']
   cam120 = ['12_0']
   cam110 = ['11_0']
-  cams_all = ['24_0', '01_0', '20_0', '19_0', '04_1', '19_1', '05_0', '05_1', '14_0', 
+  cams_all = ['24_0', '01_0', '20_0', '19_0', '04_1', '19_1', '05_0', '05_1', '14_0',
               '08_1', '13_0', '08_0', '09_0', '12_0', '11_0']
- 
+
+  # for P protocol, we use all cameras that have the same elevation angle
+  cams_all_P =['24_0', '01_0', '20_0', '19_0', '04_1', '05_0', '05_1', '14_0', '13_0', '08_0', '09_0', '12_0', '11_0']
+
   # ILLUMINATION (FRONTAL) PROTOCOLS
   # Protocol M: Enrol: No flash; Probe: No flash
   if illuminations:
@@ -285,47 +288,47 @@ def add_protocols(session, illuminations, poses, expressions, highresolutions, v
 
   # POSE PROTOCOLS
   if poses:
-    # Protocol P051: Enrol: 05_1; Probe: 05_1 (FRONTAL, SAME as 'M", except for the world set)
-    world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
-    enrol = [([1], [1], cam051, shot0)]
-    probe = [([2,3,4], [1], cam051, shot0), ([4], [2], cam051, shot0)]
-    protocol_definitions['P051'] = [world, enrol, probe]
+    # The default pose protocols
+    def add_pose_protocol(name, cam):
+      # For world, all cameras are used, including the ones with different elevation angle
+      # (specify different world_cameras on query if you like to change this behaviour)
+      world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
+      # Enrollment is always done on the frontal camera
+      enrol = [([1], [1], cam051, shot0)]
+      # Probe files are specific for the given camera
+      probe = [([2,3,4], [1], cam, shot0), ([4], [2], cam, shot0)]
+      protocol_definitions[name] = [world, enrol, probe]
 
-    # Protocol P050: Enrol: 05_1; Probe: 05_0
-    world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
-    enrol = [([1], [1], cam051, shot0)]
-    probe = [([2,3,4], [1], cam050, shot0), ([4], [2], cam050, shot0)]
-    protocol_definitions['P050'] = [world, enrol, probe]
+    # add a 'P' protocol that probes with all files with the same elevation angle
+    add_pose_protocol('P', cams_all_P)
 
-    # Protocol P140: Enrol: 05_1; Probe: 14_0
-    world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
-    enrol = [([1], [1], cam051, shot0)]
-    probe = [([2,3,4], [1], cam140, shot0), ([4], [2], cam140, shot0)]
-    protocol_definitions['P140'] = [world, enrol, probe]
+    add_pose_protocol('P240', cam240) # right profile
+    add_pose_protocol('P010', cam010) #
+    add_pose_protocol('P200', cam200) # right half-profile
 
-    # Protocol P041: Enrol: 05_1; Probe: 04_1
-    world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
-    enrol = [([1], [1], cam051, shot0)]
-    probe = [([2,3,4], [1], cam041, shot0), ([4], [2], cam041, shot0)]
-    protocol_definitions['P041'] = [world, enrol, probe]
+    add_pose_protocol('P190', cam190) #
+    add_pose_protocol('P041', cam041) # right quarter-profile
+    add_pose_protocol('P050', cam050) #
 
-    # Protocol P130: Enrol: 05_1; Probe: 13_0
-    world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
-    enrol = [([1], [1], cam051, shot0)]
-    probe = [([2,3,4], [1], cam130, shot0), ([4], [2], cam130, shot0)]
-    protocol_definitions['P130'] = [world, enrol, probe]
+    add_pose_protocol('P051', cam051) # frontal protocol; same as 'M', except for the world set
 
-    # Protocol P110: Enrol: 05_1; Probe: 11_0
-    world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
-    enrol = [([1], [1], cam051, shot0)]
-    probe = [([2,3,4], [1], cam110, shot0), ([4], [2], cam110, shot0)]
-    protocol_definitions['P110'] = [world, enrol, probe]
+    add_pose_protocol('P140', cam140) #
+    add_pose_protocol('P130', cam130) # left quarter-profile
+    add_pose_protocol('P080', cam080) #
 
-    # Protocol P240: Enrol: 05_1; Probe: 24_0
-    world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
-    enrol = [([1], [1], cam051, shot0)]
-    probe = [([2,3,4], [1], cam240, shot0), ([4], [2], cam240, shot0)]
-    protocol_definitions['P240'] = [world, enrol, probe]
+    add_pose_protocol('P090', cam090) # left half-profile
+    add_pose_protocol('P120', cam120) #
+    add_pose_protocol('P110', cam110) # left profile
+
+    # Add protocols also for the remaining two cameras '19_1' and '08_1'
+    add_pose_protocol('P191', cam191) # right quarter-profile from above
+    add_pose_protocol('P081', cam081) # left quarter-profile from above
+
+    # TODO: Also add one global protocol (e.g. 'P2') that takes ALL cameras into consideration, including '19_1' and '08_1'?
+
+
+  # TODO: EXPRESSION PROTOCOLS
+
 
   # 2. ADDITIONS TO THE SQL DATABASE
   protocolPurpose_list = [('world', 'train'), ('dev', 'enrol'), ('dev', 'probe'), ('eval', 'enrol'), ('eval', 'probe')]
@@ -354,9 +357,9 @@ def add_protocols(session, illuminations, poses, expressions, highresolutions, v
       elif(key == 3 or key == 4): client_group = "eval"
       if(key == 0):
         prop_list = protocol_definitions[proto][0]
-      elif(key == 1 or key == 3): 
+      elif(key == 1 or key == 3):
         prop_list = protocol_definitions[proto][1]
-      elif(key == 2 or key == 4): 
+      elif(key == 2 or key == 4):
         prop_list = protocol_definitions[proto][2]
 
       # Adds 'protocol' files
@@ -398,7 +401,7 @@ def create(args):
 
   dbfile = args.files[0]
 
-  if args.recreate: 
+  if args.recreate:
     if args.verbose and os.path.exists(dbfile):
       print('unlinking %s...' % dbfile)
     if os.path.exists(dbfile): os.unlink(dbfile)
@@ -439,5 +442,5 @@ def add_command(subparsers):
       help="If set, it will add the expression files (and corresponding protocols) in the database")
   parser.add_argument('-H', '--highresolutions', action='store_true', default=False,
       help="If set, it will add the high-resolution files (and corresponding protocols) in the database")
-  
+
   parser.set_defaults(func=create) #action

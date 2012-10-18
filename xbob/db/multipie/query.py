@@ -25,7 +25,7 @@ class Database(object):
   def __init__(self):
     # opens a session to the database - keep it open until the end
     self.connect()
-  
+
   def connect(self):
     """Tries connecting or re-connecting to the database"""
     if not os.path.exists(SQLITE_FILE):
@@ -48,7 +48,7 @@ class Database(object):
   def __check_validity__(self, l, obj, valid, default):
     """Checks validity of user input data against a set of valid values"""
     if not l: return default
-    elif not isinstance(l, (tuple,list)): 
+    elif not isinstance(l, (tuple,list)):
       return self.__check_validity__((l,), obj, valid, default)
     for k in l:
       if k not in valid:
@@ -209,7 +209,7 @@ class Database(object):
     protocol
       One of the Multi-PIE protocols (use protocol_names() to get the list of
       available ones)
-    
+
     groups
       The groups to which the clients belong ('dev', 'eval').
 
@@ -231,7 +231,7 @@ class Database(object):
     protocol
       One of the Multi-PIE protocols (use protocol_names() to get the list of
       available ones)
-    
+
     groups
       The groups to which the clients belong ('dev', 'eval').
 
@@ -253,7 +253,7 @@ class Database(object):
     protocol
       One of the Multi-PIE protocols (use protocol_names() to get the list of
       available ones)
-    
+
     groups
       The groups to which the subjects attached to the models belong ('dev', 'eval', 'world')
 
@@ -270,7 +270,7 @@ class Database(object):
     protocol
       One of the Multi-PIE protocols (use protocol_names() to get the list of
       available ones)
-    
+
     groups
       The groups to which the models belong ('dev', 'eval').
 
@@ -281,7 +281,7 @@ class Database(object):
 
   def get_client_id_from_model_id(self, model_id):
     """Returns the client_id attached to the given model_id
-    
+
     Keyword Parameters:
 
     model_id
@@ -291,9 +291,9 @@ class Database(object):
     """
     return model_id
 
-  def objects(self, protocol=None, purposes=None, model_ids=None, groups=None, 
+  def objects(self, protocol=None, purposes=None, model_ids=None, groups=None,
       classes=None, subworld=None, expressions=None, cameras=None, world_sampling=1,
-      world_noflash=False, world_first=False, world_second=False, world_third=False, 
+      world_noflash=False, world_first=False, world_second=False, world_third=False,
       world_fourth=False, world_nshots=None, world_shots=None):
     """Returns a set of Files for the specific query by the user.
 
@@ -305,45 +305,45 @@ class Database(object):
 
     purposes
       The purposes required to be retrieved ('enrol', 'probe', 'train') or a tuple
-      with several of them. If 'None' is given (this is the default), it is 
+      with several of them. If 'None' is given (this is the default), it is
       considered the same as a tuple with all possible values. This field is
       ignored for the data from the "world" group.
 
     model_ids
-      Only retrieves the files for the provided list of model ids (claimed 
-      client id).  If 'None' is given (this is the default), no filter over 
+      Only retrieves the files for the provided list of model ids (claimed
+      client id).  If 'None' is given (this is the default), no filter over
       the model_ids is performed.
 
     groups
-      One of the groups ('dev', 'eval', 'world') or a tuple with several of them. 
-      If 'None' is given (this is the default), it is considered the same as a 
+      One of the groups ('dev', 'eval', 'world') or a tuple with several of them.
+      If 'None' is given (this is the default), it is considered the same as a
       tuple with all possible values.
 
     classes
-      The classes (types of accesses) to be retrieved ('client', 'impostor') 
-      or a tuple with several of them. If 'None' is given (this is the 
+      The classes (types of accesses) to be retrieved ('client', 'impostor')
+      or a tuple with several of them. If 'None' is given (this is the
       default), it is considered the same as a tuple with all possible values.
-  
+
     subworld
       Specify a split of the world data ('sub41', 'sub81', 'sub121', 'sub161')
       In order to be considered, "world" should be in groups.
 
     expressions
       The (face) expressions to be retrieved (use expression_names() to get the
-      list of expressions) or a tuple with several of them. 
-      If 'None' is given (this is the default), it is considered the same as 
+      list of expressions) or a tuple with several of them.
+      If 'None' is given (this is the default), it is considered the same as
       a tuple with all possible values. Notice that some protocols only contain
       images with 'neutral' expression.
 
     cameras
-      The cameras to be retrieved (use camera_names() to get the list of cameras) 
-      r a tuple with several of them. If 'None' is given (this is the default), 
-      it is considered the same as a tuple with all possible values. The cameras 
+      The cameras to be retrieved (use camera_names() to get the list of cameras)
+      r a tuple with several of them. If 'None' is given (this is the default),
+      it is considered the same as a tuple with all possible values. The cameras
       keyword has no impact for some protocols (frontal images ones).
 
     world_sampling
       Samples the files from the world data set. Keeps only files such as::
-      
+
         File.client_id + File.shot_id % world_sampling == 0
 
       This argument should be an integer between 1 (keep everything) and 19.
@@ -357,7 +357,7 @@ class Database(object):
 
     world_noflash
       Keeps the files from the world dataset recorded without flash (shot 0)
-      
+
     world_first
       Only uses data from the first recorded session of each user of the world
       dataset.
@@ -408,9 +408,9 @@ class Database(object):
                   filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup == 'world'))
       if subworld:
         q = q.join(Subworld, Client.subworld).filter(Subworld.name.in_(subworld))
-      if expressions: 
+      if expressions:
         q = q.join(Expression).filter(Expression.name.in_(expressions))
-      if cameras: 
+      if cameras:
         q = q.join(FileMultiview).join(Camera).filter(Camera.name.in_(cameras))
       if(world_nshots):
         max1 = 19
@@ -445,7 +445,7 @@ class Database(object):
       if( world_noflash == True):
         q = q.filter(FileMultiview.shot_id == 0)
       if( world_first == True):
-        q = q.filter(and_(File.session_id == Client.first_session, or_(Client.first_session != 4, 
+        q = q.filter(and_(File.session_id == Client.first_session, or_(Client.first_session != 4,
                   and_(Client.first_session == 4, File.recording_id == 1))))
       if( world_second == True):
         q = q.filter(or_( and_(Client.second_session != 4, File.session_id == Client.second_session),
@@ -463,14 +463,14 @@ class Database(object):
         q = q.filter(Client.id.in_(model_ids))
       q = q.order_by(File.client_id, File.session_id, File.recording_id, File.id)
       retval += list(q)
-    
+
     if ('dev' in groups or 'eval' in groups):
       if('enrol' in purposes):
         q = self.session.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
               filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup.in_(groups), ProtocolPurpose.purpose == 'enrol'))
-        if expressions: 
+        if expressions:
           q = q.join(Expression).filter(Expression.name.in_(expressions))
-        if cameras: 
+        if cameras:
           q = q.join(FileMultiview).join(Camera).filter(Camera.name.in_(cameras))
         if model_ids:
           q = q.filter(Client.id.in_(model_ids))
@@ -481,9 +481,9 @@ class Database(object):
         if('client' in classes):
           q = self.session.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
                 filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup.in_(groups), ProtocolPurpose.purpose == 'probe'))
-          if expressions: 
+          if expressions:
             q = q.join(Expression).filter(Expression.name.in_(expressions))
-          if cameras: 
+          if cameras:
             q = q.join(FileMultiview).join(Camera).filter(Camera.name.in_(cameras))
           if model_ids:
             q = q.filter(Client.id.in_(model_ids))
@@ -493,19 +493,19 @@ class Database(object):
         if('impostor' in classes):
           q = self.session.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
                 filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup.in_(groups), ProtocolPurpose.purpose == 'probe'))
-          if expressions: 
+          if expressions:
             q = q.join(Expression).filter(Expression.name.in_(expressions))
-          if cameras: 
+          if cameras:
             q = q.join(FileMultiview).join(Camera).filter(Camera.name.in_(cameras))
           if len(model_ids) == 1:
             q = q.filter(not_(Client.id.in_(model_ids)))
           q = q.order_by(File.client_id, File.session_id, File.recording_id, File.id)
           retval += list(q)
-    
+
     return list(set(retval)) # To remove duplicates
 
   def tobjects(self, protocol=None, model_ids=None, groups=None, expressions=None):
-    """Returns a set of filenames for enrolling T-norm models for score 
+    """Returns a set of filenames for enrolling T-norm models for score
        normalization.
 
     Keyword Parameters:
@@ -515,8 +515,8 @@ class Database(object):
       available ones)
 
     model_ids
-      Only retrieves the files for the provided list of model ids (claimed 
-      client id).  If 'None' is given (this is the default), no filter over 
+      Only retrieves the files for the provided list of model ids (claimed
+      client id).  If 'None' is given (this is the default), no filter over
       the model_ids is performed.
 
     groups
@@ -524,8 +524,8 @@ class Database(object):
 
     expressions
       The (face) expressions to be retrieved (use expression_names() to get the
-      list of expressions) or a tuple with several of them. 
-      If 'None' is given (this is the default), it is considered the same as 
+      list of expressions) or a tuple with several of them.
+      If 'None' is given (this is the default), it is considered the same as
       a tuple with all possible values. Notice that some protocols only contain
       images with 'neutral' expression.
 
@@ -533,7 +533,7 @@ class Database(object):
     """
 
     VALID_GROUPS = ('dev', 'eval')
-    groups = self.__check_validity__(groups, "group", VALID_GROUPS)
+    groups = self.__check_validity__(groups, "group", VALID_GROUPS, VALID_GROUPS)
     tgroups = []
     if 'dev' in groups:
       tgroups.append('eval')
@@ -551,8 +551,8 @@ class Database(object):
       available ones)
 
     model_ids
-      Only retrieves the files for the provided list of model ids (client id).  
-      If 'None' is given (this is the default), no filter over the model_ids 
+      Only retrieves the files for the provided list of model ids (client id).
+      If 'None' is given (this is the default), no filter over the model_ids
       is performed.
 
     groups
@@ -560,8 +560,8 @@ class Database(object):
 
     expressions
       The (face) expressions to be retrieved (use expression_names() to get the
-      list of expressions) or a tuple with several of them. 
-      If 'None' is given (this is the default), it is considered the same as 
+      list of expressions) or a tuple with several of them.
+      If 'None' is given (this is the default), it is considered the same as
       a tuple with all possible values. Notice that some protocols only contain
       images with 'neutral' expression.
 
@@ -569,7 +569,7 @@ class Database(object):
     """
 
     VALID_GROUPS = ('dev', 'eval')
-    groups = self.__check_validity__(groups, "group", VALID_GROUPS)
+    groups = self.__check_validity__(groups, "group", VALID_GROUPS, VALID_GROUPS)
 
     zgroups = []
     if 'dev' in groups:
@@ -663,4 +663,4 @@ class Database(object):
     for p in paths:
       retval.extend([k.id for k in fobj if k.path == p])
     return retval
- 
+
