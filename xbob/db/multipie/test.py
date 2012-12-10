@@ -39,14 +39,14 @@ class MultipieDatabaseTest(unittest.TestCase):
     self.assertEqual(len(c_eval), 65) #65 clients in the eval set
     c_world = db.clients(groups='world')
     self.assertEqual(len(c_world), 208) #208 clients in the world set
-    # Check client ids 
+    # Check client ids
     self.assertTrue(db.has_client_id(1))
     self.assertFalse(db.has_client_id(395))
     # Check subworld
-    self.assertEqual(len(db.clients(groups='world', subworld='sub41')), 41) 
-    self.assertEqual(len(db.clients(groups='world', subworld='sub81')), 81) 
-    self.assertEqual(len(db.clients(groups='world', subworld='sub121')), 121) 
-    self.assertEqual(len(db.clients(groups='world', subworld='sub161')), 161) 
+    self.assertEqual(len(db.clients(groups='world', subworld='sub41')), 41)
+    self.assertEqual(len(db.clients(groups='world', subworld='sub81')), 81)
+    self.assertEqual(len(db.clients(groups='world', subworld='sub121')), 121)
+    self.assertEqual(len(db.clients(groups='world', subworld='sub161')), 161)
     # Check files relationship
     c = db.client(1)
     len(c.files) # Number depends on the way the database was created (pose only, etc.)
@@ -65,28 +65,23 @@ class MultipieDatabaseTest(unittest.TestCase):
     self.assertTrue(db.has_subworld('sub41'))
 
   def test03_files(self):
-  
+
     # TODO: depends on the way the database was created (pose only, etc.)
     db = Database()
 
-  def test04_manage_dumplist_1(self):
+    self.assertTrue(len(db.objects()) > 0)
 
-    from bob.db.script.dbmanage import main
+  def test04_driver_api(self):
 
-    self.assertEqual(main('multipie dumplist --self-test'.split()), 0)
-
-  def test05_manage_dumplist_2(self):
-    
     from bob.db.script.dbmanage import main
 
     db = Database()
+    self.assertEqual(main('multipie dumplist --self-test'.split()), 0)
     if db.has_protocol('M'):
-      self.assertEqual(main('multipie dumplist --protocol=M --classes=client --groups=dev --purposes=enrol --self-test'.split()), 0)
+      self.assertEqual(main('multipie dumplist --protocol=M --class=client --group=dev --purpose=enrol --self-test'.split()), 0)
     elif db.has_protocol('P051'):
-      self.assertEqual(main('multipie dumplist --protocol=P051 --classes=client --groups=dev --purposes=enrol --self-test'.split()), 0)
-
-  def test06_manage_checkfiles(self):
-
-    from bob.db.script.dbmanage import main
-
+      self.assertEqual(main('multipie dumplist --protocol=P051 --class=client --group=dev --purpose=enrol --self-test'.split()), 0)
     self.assertEqual(main('multipie checkfiles --self-test'.split()), 0)
+    self.assertEqual(main('multipie reverse session02/multiview/108/01/05_1/108_02_01_051_17 --self-test'.split()), 0)
+    self.assertEqual(main('multipie path 6578 --self-test'.split()), 0)
+

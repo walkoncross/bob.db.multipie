@@ -11,11 +11,11 @@ from bob.db import utils
 from .models import *
 from .driver import Interface
 
-INFO = Interface()
+import xbob.db.verification.utils
 
-SQLITE_FILE = INFO.files()[0]
+SQLITE_FILE = Interface().files()[0]
 
-class Database(object):
+class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.utils.ZTDatabase):
   """The dataset class opens and maintains a connection opened to the Database.
 
   It provides many different ways to probe for the characteristics of the data
@@ -23,37 +23,9 @@ class Database(object):
   """
 
   def __init__(self):
-    # opens a session to the database - keep it open until the end
-    self.connect()
-
-  def connect(self):
-    """Tries connecting or re-connecting to the database"""
-    if not os.path.exists(SQLITE_FILE):
-      self.session = None
-
-    else:
-      self.session = utils.session_try_readonly(INFO.type(), SQLITE_FILE)
-
-  def is_valid(self):
-    """Returns if a valid session has been opened for reading the database"""
-
-    return self.session is not None
-
-  def assert_validity(self):
-    """Raise a RuntimeError if the database backend is not available"""
-
-    if not self.is_valid():
-      raise RuntimeError, "Database '%s' cannot be found at expected location '%s'. Create it and then try re-connecting using Database.connect()" % (INFO.name(), SQLITE_FILE)
-
-  def __check_validity__(self, l, obj, valid, default):
-    """Checks validity of user input data against a set of valid values"""
-    if not l: return default
-    elif not isinstance(l, (tuple,list)):
-      return self.__check_validity__((l,), obj, valid, default)
-    for k in l:
-      if k not in valid:
-        raise RuntimeError, 'Invalid %s "%s". Valid values are %s, or lists/tuples of those' % (obj, k, valid)
-    return l
+    # call base class constructors
+    xbob.db.verification.utils.SQLiteDatabase.__init__(self, SQLITE_FILE)
+    xbob.db.verification.utils.ZTDatabase.__init__(self)
 
   def groups(self):
     """Returns the names of all registered groups"""
@@ -68,20 +40,16 @@ class Database(object):
   def subworlds(self):
     """Returns the list of subworlds"""
 
-    self.assert_validity()
-
-    return list(self.session.query(Subworld))
+    return list(self.query(Subworld))
 
   def has_subworld(self, name):
     """Tells if a certain subworld is available"""
 
-    self.assert_validity()
-    return self.session.query(Subworld).filter(Subworld.name==name).count() != 0
+    return self.query(Subworld).filter(Subworld.name==name).count() != 0
 
   def subworld_names(self):
     """Returns all registered subworld names"""
 
-    self.assert_validity()
     l = self.subworlds()
     retval = [str(k.name) for k in l]
     return retval
@@ -89,20 +57,16 @@ class Database(object):
   def expressions(self):
     """Returns the list of expressions"""
 
-    self.assert_validity()
-
-    return list(self.session.query(Expression))
+    return list(self.query(Expression))
 
   def has_expression(self, name):
     """Tells if a certain expression is available"""
 
-    self.assert_validity()
-    return self.session.query(Expression).filter(Expression.name==name).count() != 0
+    return self.query(Expression).filter(Expression.name==name).count() != 0
 
   def expression_names(self):
     """Returns all registered expression names"""
 
-    self.assert_validity()
     l = self.expressions()
     retval = [str(k.name) for k in l]
     return retval
@@ -110,25 +74,19 @@ class Database(object):
   def cameras(self):
     """Returns the list of cameras"""
 
-    self.assert_validity()
-
-    return list(self.session.query(Camera))
+    return list(self.query(Camera))
 
   def has_camera(self, name):
     """Tells if a certain camera is available"""
 
-    self.assert_validity()
-    return self.session.query(Camera).filter(Camera.name==name).count() != 0
+    return self.query(Camera).filter(Camera.name==name).count() != 0
 
   def camera_names(self):
     """Returns all registered camera names"""
 
-    self.assert_validity()
-    l = self.cameras()
-    retval = [str(k.name) for k in l]
-    return retval
+    return [str(c.name) for c in self.cameras()]
 
-  def clients(self, protocol=None, groups=None, subworld=None, gender=None, birthyear=None):
+  def clients(self, protocol=None, groups=None, subworld=None, genders=None, birthyears=None):
     """Returns a set of Clients for the specific query by the user.
 
     Keyword Parameters:
@@ -144,46 +102,42 @@ class Database(object):
       Specify a split of the world data ('sub41', 'sub81', 'sub121', 'sub161')
       In order to be considered, "world" should be in groups.
 
-    gender
+    genders
       The genders to which the clients belong ('female', 'male')
 
-    birthyear
+    birthyears
       The birth year of the clients (in the range [1900,2050])
 
     Returns: A list containing all the Clients which have the given properties.
     """
 
-    self.assert_validity()
-
-    VALID_PROTOCOLS = self.protocol_names()
-    VALID_GROUPS = self.groups()
-    VALID_SUBWORLDS = self.subworld_names()
-    VALID_GENDERS = self.genders()
     VALID_BIRTHYEARS = range(1900, 2050)
     VALID_BIRTHYEARS.append(57) # bug in subject_list.txt (57 instead of 1957)
-    protocol = self.__check_validity__(protocol, 'protocol', VALID_PROTOCOLS, VALID_PROTOCOLS)
-    groups = self.__check_validity__(groups, 'group', VALID_GROUPS, VALID_GROUPS)
-    if subworld: subworld = self.__check_validity__(subworld, 'subworld', VALID_SUBWORLDS, '')
-    gender = self.__check_validity__(gender, 'gender', VALID_GENDERS, VALID_GENDERS)
-    birthyear = self.__check_validity__(birthyear, 'birthyear', VALID_BIRTHYEARS, VALID_BIRTHYEARS)
+    protocol = self.check_parameters_for_validity(protocol, 'protocol', self.protocol_names())
+    groups = self.check_parameters_for_validity(groups, 'group', self.groups())
+    if subworld:
+      subworld = self.check_parameters_for_validity(subworld, 'subworld', self.subworld_names())
+    genders = self.check_parameters_for_validity(genders, 'gender', self.genders())
+    birthyears = self.check_parameters_for_validity(birthyears, 'birthyear', VALID_BIRTHYEARS)
+
     # List of the clients
     retval = []
     # World data
     if "world" in groups:
-      q = self.session.query(Client)
+      q = self.query(Client)
       if subworld:
         q = q.join(Subworld, Client.subworld).filter(Subworld.name.in_(subworld))
       q = q.filter(Client.sgroup == 'world').\
-            filter(Client.gender.in_(gender)).\
-            filter(Client.birthyear.in_(birthyear)).\
+            filter(Client.gender.in_(genders)).\
+            filter(Client.birthyear.in_(birthyears)).\
             order_by(Client.id)
       retval += list(q)
     # dev / eval data
     if 'dev' in groups or 'eval' in groups:
-      q = self.session.query(Client).\
+      q = self.query(Client).\
             filter(and_(Client.sgroup != 'world', Client.sgroup.in_(groups))).\
-            filter(Client.gender.in_(gender)).\
-            filter(Client.birthyear.in_(birthyear)).\
+            filter(Client.gender.in_(genders)).\
+            filter(Client.birthyear.in_(birthyears)).\
             order_by(Client.id)
       retval += list(q)
     return retval
@@ -191,15 +145,13 @@ class Database(object):
   def has_client_id(self, id):
     """Returns True if we have a client with a certain integer identifier"""
 
-    self.assert_validity()
-    return self.session.query(Client).filter(Client.id==id).count() != 0
+    return self.query(Client).filter(Client.id==id).count() != 0
 
   def client(self, id):
     """Returns the Client object in the database given a certain id. Raises
     an error if that does not exist."""
 
-    self.assert_validity()
-    return self.session.query(Client).filter(Client.id==id).one()
+    return self.query(Client).filter(Client.id==id).one()
 
   def tclients(self, protocol=None, groups=None):
     """Returns a set of T-Norm clients for the specific query by the user.
@@ -216,8 +168,7 @@ class Database(object):
     Returns: A list containing all the client ids belonging to the given group.
     """
 
-    VALID_GROUPS = ('dev', 'eval')
-    groups = self.__check_validity__(groups, "group", VALID_GROUPS, VALID_GROUPS)
+    groups = self.check_parameters_for_validity(groups, "group", ('dev', 'eval'))
     tgroups = []
     if 'dev' in groups: tgroups.append('eval')
     if 'eval' in groups: tgroups.append('dev')
@@ -238,8 +189,7 @@ class Database(object):
     Returns: A list containing all the client ids belonging to the given group.
     """
 
-    VALID_GROUPS = ('dev', 'eval')
-    groups = self.__check_validity__(groups, "group", VALID_GROUPS, VALID_GROUPS)
+    groups = self.check_parameters_for_validity(groups, "group", ('dev', 'eval'))
     zgroups = []
     if 'dev' in groups: zgroups.append('eval')
     if 'eval' in groups: zgroups.append('dev')
@@ -257,10 +207,27 @@ class Database(object):
     groups
       The groups to which the subjects attached to the models belong ('dev', 'eval', 'world')
 
-    Returns: A list containing all the model ids belonging to the given group.
+    Returns: A list containing all the models belonging to the given group.
     """
 
     return self.clients(protocol, groups)
+
+  def model_ids(self, protocol=None, groups=None):
+    """Returns a set of model ids for the specific query by the user.
+
+    Keyword Parameters:
+
+    protocol
+      One of the Multi-PIE protocols (use protocol_names() to get the list of
+      available ones)
+
+    groups
+      The groups to which the subjects attached to the models belong ('dev', 'eval', 'world')
+
+    Returns: A list containing the ids all the models belonging to the given group.
+    """
+
+    return [client.id for client in self.clients(protocol, groups)]
 
   def tmodels(self, protocol=None, groups=None):
     """Returns a set of T-Norm models for the specific query by the user.
@@ -274,10 +241,27 @@ class Database(object):
     groups
       The groups to which the models belong ('dev', 'eval').
 
-    Returns: A list containing all the model ids belonging to the given group.
+    Returns: A list containing all the T-Norm models belonging to the given group.
     """
 
     return self.tclients(protocol, groups)
+
+  def tmodel_ids(self, protocol=None, groups=None):
+    """Returns a set of T-Norm model ids for the specific query by the user.
+
+    Keyword Parameters:
+
+    protocol
+      One of the Multi-PIE protocols (use protocol_names() to get the list of
+      available ones)
+
+    groups
+      The groups to which the models belong ('dev', 'eval').
+
+    Returns: A list containing all ids of the T-Norm models belonging to the given group.
+    """
+
+    return [client.id for id in self.tclients(protocol, groups)]
 
   def get_client_id_from_model_id(self, model_id):
     """Returns the client_id attached to the given model_id
@@ -377,23 +361,14 @@ class Database(object):
     Returns: A set of Files with the given properties.
     """
 
-    self.assert_validity()
-
-    VALID_PROTOCOLS = self.protocol_names()
-    VALID_PURPOSES = self.purposes()
-    VALID_GROUPS = self.groups()
-    VALID_CLASSES = ('client', 'impostor')
-    VALID_SUBWORLDS = self.subworld_names()
-    VALID_EXPRESSIONS = self.expression_names()
-    VALID_CAMERAS = self.camera_names()
-
-    protocol = self.__check_validity__(protocol, 'protocol', VALID_PROTOCOLS, VALID_PROTOCOLS)
-    purposes = self.__check_validity__(purposes, 'purpose', VALID_PURPOSES, VALID_PURPOSES)
-    groups = self.__check_validity__(groups, 'group', VALID_GROUPS, VALID_GROUPS)
-    classes = self.__check_validity__(classes, 'class', VALID_CLASSES, VALID_CLASSES)
-    if subworld: subworld = self.__check_validity__(subworld, 'subworld', VALID_SUBWORLDS, VALID_SUBWORLDS)
-    if expressions: expressions = self.__check_validity__(expressions, 'expression', VALID_EXPRESSIONS, VALID_EXPRESSIONS)
-    if cameras: cameras = self.__check_validity__(cameras, 'camera', VALID_CAMERAS, VALID_CAMERAS)
+    protocol = self.check_parameters_for_validity(protocol, 'protocol', self.protocol_names())
+    purposes = self.check_parameters_for_validity(purposes, 'purpose', self.purposes())
+    groups = self.check_parameters_for_validity(groups, 'group', self.groups())
+    classes = self.check_parameters_for_validity(classes, 'class', ('client', 'impostor'))
+    if subworld:
+      subworld = self.check_parameters_for_validity(subworld, 'subworld', self.subworld_names())
+    if expressions: expressions = self.check_parameters_for_validity(expressions, 'expression', self.expression_names())
+    if cameras: cameras = self.check_parameters_for_validity(cameras, 'camera', self.camera_names())
 
     import collections
     if(model_ids is None):
@@ -404,7 +379,7 @@ class Database(object):
     # Now query the database
     retval = []
     if 'world' in groups:
-      q = self.session.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
+      q = self.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
                   filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup == 'world'))
       if subworld:
         q = q.join(Subworld, Client.subworld).filter(Subworld.name.in_(subworld))
@@ -466,7 +441,7 @@ class Database(object):
 
     if ('dev' in groups or 'eval' in groups):
       if('enrol' in purposes):
-        q = self.session.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
+        q = self.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
               filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup.in_(groups), ProtocolPurpose.purpose == 'enrol'))
         if expressions:
           q = q.join(Expression).filter(Expression.name.in_(expressions))
@@ -479,7 +454,7 @@ class Database(object):
 
       if('probe' in purposes):
         if('client' in classes):
-          q = self.session.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
+          q = self.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
                 filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup.in_(groups), ProtocolPurpose.purpose == 'probe'))
           if expressions:
             q = q.join(Expression).filter(Expression.name.in_(expressions))
@@ -491,7 +466,7 @@ class Database(object):
           retval += list(q)
 
         if('impostor' in classes):
-          q = self.session.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
+          q = self.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
                 filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup.in_(groups), ProtocolPurpose.purpose == 'probe'))
           if expressions:
             q = q.join(Expression).filter(Expression.name.in_(expressions))
@@ -532,8 +507,8 @@ class Database(object):
     Returns: A list of Files with the given properties.
     """
 
-    VALID_GROUPS = ('dev', 'eval')
-    groups = self.__check_validity__(groups, "group", VALID_GROUPS, VALID_GROUPS)
+    groups = self.check_parameters_for_validity(groups, "group", ('dev', 'eval'))
+
     tgroups = []
     if 'dev' in groups:
       tgroups.append('eval')
@@ -568,8 +543,7 @@ class Database(object):
     Returns: A list of Files with the given properties.
     """
 
-    VALID_GROUPS = ('dev', 'eval')
-    groups = self.__check_validity__(groups, "group", VALID_GROUPS, VALID_GROUPS)
+    groups = self.check_parameters_for_validity(groups, "group", ('dev', 'eval'))
 
     zgroups = []
     if 'dev' in groups:
@@ -581,42 +555,35 @@ class Database(object):
   def protocol_names(self):
     """Returns all registered protocol names"""
 
-    self.assert_validity()
-    l = self.protocols()
-    retval = [str(k.name) for k in l]
-    return retval
+    return [str(p.name) for p in self.protocols()]
 
   def protocols(self):
     """Returns all registered protocols"""
 
-    self.assert_validity()
-    return list(self.session.query(Protocol))
+    return list(self.query(Protocol))
 
   def has_protocol(self, name):
     """Tells if a certain protocol is available"""
 
-    self.assert_validity()
-    return self.session.query(Protocol).filter(Protocol.name==name).count() != 0
+    return self.query(Protocol).filter(Protocol.name==name).count() != 0
 
   def protocol(self, name):
     """Returns the protocol object in the database given a certain name. Raises
     an error if that does not exist."""
 
-    self.assert_validity()
-    return self.session.query(Protocol).filter(Protocol.name==name).one()
+    return self.query(Protocol).filter(Protocol.name==name).one()
 
   def protocol_purposes(self):
     """Returns all registered protocol purposes"""
 
-    self.assert_validity()
-    return list(self.session.query(ProtocolPurpose))
+    return list(self.query(ProtocolPurpose))
 
   def purposes(self):
     """Returns the list of allowed purposes"""
 
     return ProtocolPurpose.purpose_choices
 
-  def paths(self, ids, prefix='', suffix=''):
+  def paths(self, ids, prefix=None, suffix=None):
     """Returns a full file paths considering particular file ids, a given
     directory and an extension
 
@@ -637,9 +604,7 @@ class Database(object):
     file ids.
     """
 
-    self.assert_validity()
-
-    fobj = self.session.query(File).filter(File.id.in_(ids))
+    fobj = self.query(File).filter(File.id.in_(ids))
     retval = []
     for p in ids:
       retval.extend([k.make_path(prefix, suffix) for k in fobj if k.id == p])
@@ -657,9 +622,8 @@ class Database(object):
     Returns a list (that may be empty).
     """
 
-    self.assert_validity()
-
-    fobj = self.session.query(File).filter(File.path.in_(paths))
+    fobj = self.query(File).filter(File.path.in_(paths))
+    retval = []
     for p in paths:
       retval.extend([k.id for k in fobj if k.path == p])
     return retval
