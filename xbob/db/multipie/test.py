@@ -47,6 +47,13 @@ class MultipieDatabaseTest(unittest.TestCase):
     self.assertEqual(len(db.clients(groups='world', subworld='sub81')), 81)
     self.assertEqual(len(db.clients(groups='world', subworld='sub121')), 121)
     self.assertEqual(len(db.clients(groups='world', subworld='sub161')), 161)
+
+    # check models and t-models
+    self.assertEqual(len(db.model_ids(groups='dev')), 64)
+    self.assertEqual(len(db.model_ids(groups='eval')), 65)
+    self.assertEqual(len(db.tmodel_ids(groups='dev')), 65)
+    self.assertEqual(len(db.tmodel_ids(groups='eval')), 64)
+
     # Check files relationship
     c = db.client(1)
     len(c.files) # Number depends on the way the database was created (pose only, etc.)
@@ -69,7 +76,10 @@ class MultipieDatabaseTest(unittest.TestCase):
     # TODO: depends on the way the database was created (pose only, etc.)
     db = Database()
 
+    # TODO: better tests for this
     self.assertTrue(len(db.objects()) > 0)
+    self.assertTrue(len(db.zobjects()) > 0)
+    self.assertTrue(len(db.tobjects()) > 0)
 
   def test04_driver_api(self):
 

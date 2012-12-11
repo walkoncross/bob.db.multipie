@@ -261,7 +261,7 @@ class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.u
     Returns: A list containing all ids of the T-Norm models belonging to the given group.
     """
 
-    return [client.id for id in self.tclients(protocol, groups)]
+    return [client.id for client in self.tclients(protocol, groups)]
 
   def get_client_id_from_model_id(self, model_id):
     """Returns the client_id attached to the given model_id
