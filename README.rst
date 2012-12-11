@@ -77,24 +77,17 @@ lines::
  Using protocols
 =================
 
-Due to space reasons, by default, only the illumination-based protocols are
-enabled. If you want to use other protocols, you have two possibilities:
+For simplicity, by default all provided protocols are enabled. This makes the
+database query a bit slow. If you don't want to wait each time you query the
+database, you can re-create the database on your own. For that, you have to
+follow the "download from git" recipe. After doing the bootstrap/buildout step
+(see `here
+<http://www.idiap.ch/software/bob/docs/releases/last/sphinx/html/OrganizeYourCode.html>`_
+for details) in your main directory, you have to go to the (newly created)
+directory ``src/xbob.db.multipie`` and do the same bootstrap/buildout step
+again. Finally, you can use the `Bob <http://www.idiap.ch/software/bob/>`_ API:
+``bin/bob_dbmanage.py multipie create --help`` to regenerate the SQLite file
+based on your criteria.
 
-1. Download the SQLite file from our
-   `GitHub <https://github.com/bioidiap/xbob.db.multipie/downloads>`_ page and
-   place the downloaded db.sql3 in the directory:
-
-   a) ``eggs/xbob.db.multipie-.../xbob/db/multipie/``, if you have downloaded
-      the package from PyPI. In this case, please overwrite the existing file.
-
-   b) ``src/xbob.db.multipie/xbob/db/multipie/``, if you have downloaded the
-      sources from git.
-
-2. After downloading from git, you can also re-create the database on your own.
-   After bootstrap and buildout (see `here
-   <http://www.idiap.ch/software/bob/docs/releases/last/sphinx/html/OrganizeYourCode.html>`_
-   for details) you can use the `Bob <http://www.idiap.ch/software/bob/>`_ API:
-   ``bin/bob_dbmanage.py multipie create --help`` to regenerate the SQLite file.
-
-Afterward, the requested protocols should be available. If not, please
+Afterward, only the requested protocols should be available. If not, please
 `file a bug <https://github.com/bioidiap/xbob.db.multipie/issues>`_ to get help.
