@@ -76,7 +76,7 @@ def add_clients(session, filelist, verbose):
       group = 'world'
       if int(v[0]) in dev_ids: group = 'dev'
       elif int(v[0]) in eval_ids: group = 'eval'
-      if verbose: print "Adding client '%d' ..." % int(v[0])
+      if verbose>1: print "Adding client '%d' ..." % int(v[0])
       session.add(Client(int(v[0]), group, int(v[1]), v[2], first_session, second_session, third_session, fourth_session))
       client_dict[v[0]] = True
 
@@ -122,7 +122,7 @@ def add_subworlds(session, verbose):
     session.refresh(su)
     l = slist[k]
     for c_id in l:
-      if verbose: print "Adding client '%d' to subworld '%s'..." %(c_id, snames[k])
+      if verbose>1: print "Adding client '%d' to subworld '%s'..." %(c_id, snames[k])
       su.clients.append(session.query(Client).filter(Client.id == c_id).first())
 
 def add_files(session, imagedir, illuminations, poses, expressions, highresolutions, verbose):
@@ -134,7 +134,7 @@ def add_files(session, imagedir, illuminations, poses, expressions, highresoluti
     v = os.path.splitext(filename)[0].split('_')
     shot_id = int(v[5])
     if illuminations or shot_id == 0:
-      if verbose: print "Adding file (multiview) '%s' ..." %(filename,)
+      if verbose>1: print "Adding file (multiview) '%s' ..." %(filename,)
       sid = int(session_id[8])
       rid = int(recording_id)
       eid = expr_dict[(sid,rid)][0]
@@ -152,7 +152,7 @@ def add_files(session, imagedir, illuminations, poses, expressions, highresoluti
   def add_hr_file(session, filename, session_id, client_id, expr_dict, expressions, verbose):
     """Parse a single filename and add it to the list.
        Also add a client entry if not already in the database."""
-    if verbose: print "Adding file (multiview) '%s' ..." %(filename,)
+    if verbose>1: print "Adding file (highres) '%s' ..." %(filename,)
     v = os.path.splitext(filename)[0].split('_')
     sid = int(session_id[8])
     rid = int(v[1])
@@ -198,7 +198,6 @@ def add_files(session, imagedir, illuminations, poses, expressions, highresoluti
   expr_dict = add_expressions(session, verbose)
   cam_dict = add_cameras(session, verbose)
 
-  list_of_files = {}
   # session
   for session_id in filter(nodot, os.listdir(imagedir)):
     se_dir = os.path.join(imagedir, session_id)
@@ -344,7 +343,7 @@ def add_protocols(session, illuminations, poses, expressions, highresolutions, v
     for key in range(len(protocolPurpose_list)):
       purpose = protocolPurpose_list[key]
       pu = ProtocolPurpose(p.id, purpose[0], purpose[1])
-      if verbose: print "  Adding protocol purpose ('%s','%s')..." % (purpose[0], purpose[1])
+      if verbose>1: print "  Adding protocol purpose ('%s','%s')..." % (purpose[0], purpose[1])
       session.add(pu)
       session.flush()
       session.refresh(pu)
@@ -380,7 +379,7 @@ def add_protocols(session, illuminations, poses, expressions, highresolutions, v
           q = q.filter(FileMultiview.shot_id.in_(shot_ids))
         q = q.order_by(File.id)
         for k in q:
-          if verbose: print "    Adding protocol file '%s'..." % (k.path)
+          if verbose>1: print "    Adding protocol file '%s'..." % (k.path)
           pu.files.append(k)
 
 def create_tables(args):
@@ -424,23 +423,13 @@ def add_command(subparsers):
 
   parser = subparsers.add_parser('create', help=create.__doc__)
 
-  parser.add_argument('-R', '--recreate', action='store_true', default=False,
-      help="If set, I'll first erase the current database")
-  parser.add_argument('-v', '--verbose', action='count',
-      help="Do SQL operations in a verbose way")
-  parser.add_argument('-D', '--imagedir', action='store', metavar='DIR',
-      default='/idiap/resource/database/Multi-Pie/data',
-      help="Change the relative path to the directory containing the images of the Multi-PIE database (defaults to %(default)s)")
-  parser.add_argument('--subjectlist', action='store',
-      default='/idiap/resource/database/Multi-Pie/meta/subject_list.txt',
-      help="Change the file containing the subject list of the Multi-PIE database (defaults to %(default)s)")
-  parser.add_argument('-I', '--noilluminations', action='store_true', default=False,
-      help="If set, it will not add the illumination files (and corresponding protocols) in the database")
-  parser.add_argument('-P', '--poses', action='store_true', default=False,
-      help="If set, it will add the pose files (and corresponding protocols) in the database")
-  parser.add_argument('-E', '--expressions', action='store_true', default=False,
-      help="If set, it will add the expression files (and corresponding protocols) in the database")
-  parser.add_argument('-H', '--highresolutions', action='store_true', default=False,
-      help="If set, it will add the high-resolution files (and corresponding protocols) in the database")
+  parser.add_argument('-R', '--recreate', action='store_true', help="If set, I'll first erase the current database")
+  parser.add_argument('-v', '--verbose', action='count', help="Do SQL operations in a verbose way")
+  parser.add_argument('-D', '--imagedir', metavar='DIR', default='/idiap/resource/database/Multi-Pie/data', help="Change the relative path to the directory containing the images of the Multi-PIE database.")
+  parser.add_argument('--subjectlist', default='/idiap/resource/database/Multi-Pie/meta/subject_list.txt', help="Change the file containing the subject list of the Multi-PIE database.")
+  parser.add_argument('-I', '--noilluminations', action='store_true', help='If set, it will not add the illumination files (and corresponding protocols) in the database')
+  parser.add_argument('-P', '--poses', action='store_true', help='If set, it will add the pose files (and corresponding protocols) in the database')
+  parser.add_argument('-E', '--expressions', action='store_true', help='If set, it will add the expression files (and corresponding protocols) in the database')
+  parser.add_argument('-H', '--highresolutions', action='store_true', help='If set, it will add the high-resolution files (and corresponding protocols) in the database')
 
   parser.set_defaults(func=create) #action
