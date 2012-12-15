@@ -126,7 +126,7 @@ class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.u
     if "world" in groups:
       q = self.query(Client)
       if subworld:
-        q = q.join(Subworld, Client.subworld).filter(Subworld.name.in_(subworld))
+        q = q.join((Subworld, Client.subworld)).filter(Subworld.name.in_(subworld))
       q = q.filter(Client.sgroup == 'world').\
             filter(Client.gender.in_(genders)).\
             filter(Client.birthyear.in_(birthyears)).\
@@ -379,10 +379,10 @@ class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.u
     # Now query the database
     retval = []
     if 'world' in groups:
-      q = self.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
+      q = self.query(File).join(Client).join((ProtocolPurpose, File.protocol_purposes)).join(Protocol).\
                   filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup == 'world'))
       if subworld:
-        q = q.join(Subworld, Client.subworld).filter(Subworld.name.in_(subworld))
+        q = q.join((Subworld, Client.subworld)).filter(Subworld.name.in_(subworld))
       if expressions:
         q = q.join(Expression).filter(Expression.name.in_(expressions))
       if cameras:
@@ -441,7 +441,7 @@ class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.u
 
     if ('dev' in groups or 'eval' in groups):
       if('enrol' in purposes):
-        q = self.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
+        q = self.query(File).join(Client).join((ProtocolPurpose, File.protocol_purposes)).join(Protocol).\
               filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup.in_(groups), ProtocolPurpose.purpose == 'enrol'))
         if expressions:
           q = q.join(Expression).filter(Expression.name.in_(expressions))
@@ -454,7 +454,7 @@ class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.u
 
       if('probe' in purposes):
         if('client' in classes):
-          q = self.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
+          q = self.query(File).join(Client).join((ProtocolPurpose, File.protocol_purposes)).join(Protocol).\
                 filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup.in_(groups), ProtocolPurpose.purpose == 'probe'))
           if expressions:
             q = q.join(Expression).filter(Expression.name.in_(expressions))
@@ -466,7 +466,7 @@ class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.u
           retval += list(q)
 
         if('impostor' in classes):
-          q = self.query(File).join(Client).join(ProtocolPurpose, File.protocol_purposes).join(Protocol).\
+          q = self.query(File).join(Client).join((ProtocolPurpose, File.protocol_purposes)).join(Protocol).\
                 filter(and_(Protocol.name.in_(protocol), ProtocolPurpose.sgroup.in_(groups), ProtocolPurpose.purpose == 'probe'))
           if expressions:
             q = q.join(Expression).filter(Expression.name.in_(expressions))
