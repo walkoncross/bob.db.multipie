@@ -326,7 +326,13 @@ def add_protocols(session, illuminations, poses, expressions, highresolutions, v
     # TODO: Also add one global protocol (e.g. 'P2') that takes ALL cameras into consideration, including '19_1' and '08_1'?
 
 
-  # TODO: EXPRESSION PROTOCOLS
+  # EXPRESSION PROTOCOLS; currently only one
+  if expressions:
+    # Protocol E: Enrol: Neutral expression (1x); Probe: neutral expression (4x) and other expressions
+    world = [([1], [1,2], cam051, shot0), ([2,3,4], [1,2,3], cam051, shot0)]
+    enrol = [([1], [1], cam051, shot0)]
+    probe = [([2,3,4], [1,2,3], cam051, shot0)]
+    protocol_definitions['E'] = [world, enrol, probe]
 
 
   # 2. ADDITIONS TO THE SQL DATABASE
