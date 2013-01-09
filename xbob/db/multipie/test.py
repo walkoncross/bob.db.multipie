@@ -21,7 +21,7 @@
 
 import os, sys
 import unittest
-from .query import Database
+from xbob.db.multipie import Database
 
 class MultipieDatabaseTest(unittest.TestCase):
   """Performs various tests on the Multi-PIE database."""
@@ -71,7 +71,7 @@ class MultipieDatabaseTest(unittest.TestCase):
     self.assertEqual(len(db.subworld_names()), 4)
     self.assertTrue(db.has_subworld('sub41'))
 
-  def test03_files(self):
+  def test03_objects(self):
 
     # TODO: depends on the way the database was created (pose only, etc.)
     db = Database()
