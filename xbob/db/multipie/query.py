@@ -385,9 +385,11 @@ class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.u
         q = q.join((Subworld, Client.subworld)).filter(Subworld.name.in_(subworld))
       if expressions:
         q = q.join(Expression).filter(Expression.name.in_(expressions))
+      if cameras or world_nshots or world_shots or (world_sampling != 1 and world_noflash == False) or world_noflash:
+        q = q.join(FileMultiview)
       if cameras:
-        q = q.join(FileMultiview).join(Camera).filter(Camera.name.in_(cameras))
-      if(world_nshots):
+        q = q.join(Camera).filter(Camera.name.in_(cameras))
+      if world_nshots:
         max1 = 19
         max2 = 19
         max3 = 19
@@ -413,24 +415,24 @@ class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.u
                           and_( File.session_id == Client.third_session, or_(and_(File.recording_id == 1, FileMultiview.shot_id < max3),
                                                                              and_(File.recording_id == 2, FileMultiview.shot_id < max4))),
                           and_( File.session_id == Client.fourth_session, FileMultiview.shot_id < max4)))
-      if(world_shots):
+      if world_shots:
         q = q.filter(FileMultiview.shot_id.in_(world_shots))
-      if( world_sampling != 1 and world_noflash == False):
+      if (world_sampling != 1 and world_noflash == False):
         q = q.filter(((File.client_id + FileMultiview.shot_id) % world_sampling) == 0)
-      if( world_noflash == True):
+      if world_noflash:
         q = q.filter(FileMultiview.shot_id == 0)
-      if( world_first == True):
+      if world_first:
         q = q.filter(and_(File.session_id == Client.first_session, or_(Client.first_session != 4,
                   and_(Client.first_session == 4, File.recording_id == 1))))
-      if( world_second == True):
+      if world_second:
         q = q.filter(or_( and_(Client.second_session != 4, File.session_id == Client.second_session),
                           or_( and_(Client.first_session == 4, and_(File.session_id == 4, File.recording_id == 2)),
                                and_(Client.second_session == 4, and_(File.session_id == 4, File.recording_id == 1)))))
-      if( world_third == True):
+      if world_third:
         q = q.filter(or_( and_(Client.third_session != 4, File.session_id == Client.third_session),
                           or_( and_(Client.second_session == 4, and_(File.session_id == 4, File.recording_id == 2)),
                                and_(Client.third_session == 4, and_(File.session_id == 4, File.recording_id == 1)))))
-      if( world_fourth == True):
+      if world_fourth:
         q = q.filter(or_( and_(Client.fourth_session != 4, File.session_id == Client.fourth_session),
                           or_( and_(Client.third_session == 4, and_(File.session_id == 4, File.recording_id == 2)),
                                and_(Client.fourth_session == 4, and_(File.session_id == 4, File.recording_id == 1)))))
