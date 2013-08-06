@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 setup(
 
     name='xbob.db.multipie',
-    version='1.0.7',
+    version='1.0.8a0',
     description='Multi-PIE Database Access API for Bob',
     url='http://github.com/bioidiap/xbob.db.multipie',
     license='GPLv3',
