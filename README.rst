@@ -91,3 +91,12 @@ based on your criteria.
 
 Afterward, only the requested protocols should be available. If not, please
 `file a bug <https://github.com/bioidiap/xbob.db.multipie/issues>`_ to get help.
+
+
+=================================
+ Note to the package maintainers
+=================================
+
+On PyPI, we used to provide the database with all the protocols enabled.
+This means that the database has to be generated as follows, before the packaging:
+``bin/bob_dbmanage.py multipie create -P -E``.
