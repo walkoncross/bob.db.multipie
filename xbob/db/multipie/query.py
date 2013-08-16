@@ -111,7 +111,7 @@ class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.u
     Returns: A list containing all the Clients which have the given properties.
     """
 
-    VALID_BIRTHYEARS = range(1900, 2050)
+    VALID_BIRTHYEARS = list(range(1900, 2050))
     VALID_BIRTHYEARS.append(57) # bug in subject_list.txt (57 instead of 1957)
     protocol = self.check_parameters_for_validity(protocol, 'protocol', self.protocol_names())
     groups = self.check_parameters_for_validity(groups, 'group', self.groups())

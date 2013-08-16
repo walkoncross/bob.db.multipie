@@ -76,7 +76,7 @@ def add_clients(session, filelist, verbose):
       group = 'world'
       if int(v[0]) in dev_ids: group = 'dev'
       elif int(v[0]) in eval_ids: group = 'eval'
-      if verbose>1: print "Adding client '%d' ..." % int(v[0])
+      if verbose>1: print("Adding client '%d' ..." % int(v[0]))
       session.add(Client(int(v[0]), group, int(v[1]), v[2], first_session, second_session, third_session, fourth_session))
       client_dict[v[0]] = True
 
@@ -115,14 +115,14 @@ def add_subworlds(session, verbose):
   snames = ['sub41', 'sub81', 'sub121', 'sub161']
   slist = [l41, l81, l121, l161]
   for k in range(len(snames)):
-    if verbose: print "Adding subworld '%s'" %(snames[k], )
+    if verbose: print("Adding subworld '%s'" %(snames[k], ))
     su = Subworld(snames[k])
     session.add(su)
     session.flush()
     session.refresh(su)
     l = slist[k]
     for c_id in l:
-      if verbose>1: print "Adding client '%d' to subworld '%s'..." %(c_id, snames[k])
+      if verbose>1: print("Adding client '%d' to subworld '%s'..." %(c_id, snames[k]))
       su.clients.append(session.query(Client).filter(Client.id == c_id).first())
 
 def add_files(session, imagedir, illuminations, poses, expressions, highresolutions, verbose):
@@ -134,7 +134,7 @@ def add_files(session, imagedir, illuminations, poses, expressions, highresoluti
     v = os.path.splitext(filename)[0].split('_')
     shot_id = int(v[5])
     if illuminations or shot_id == 0:
-      if verbose>1: print "Adding file (multiview) '%s' ..." %(filename,)
+      if verbose>1: print("Adding file (multiview) '%s' ..." %(filename,))
       sid = int(session_id[8])
       rid = int(recording_id)
       eid = expr_dict[(sid,rid)][0]
@@ -152,7 +152,7 @@ def add_files(session, imagedir, illuminations, poses, expressions, highresoluti
   def add_hr_file(session, filename, session_id, client_id, expr_dict, expressions, verbose):
     """Parse a single filename and add it to the list.
        Also add a client entry if not already in the database."""
-    if verbose>1: print "Adding file (highres) '%s' ..." %(filename,)
+    if verbose>1: print("Adding file (highres) '%s' ..." %(filename,))
     v = os.path.splitext(filename)[0].split('_')
     sid = int(session_id[8])
     rid = int(v[1])
@@ -169,7 +169,7 @@ def add_files(session, imagedir, illuminations, poses, expressions, highresoluti
     expr_dict = {}
     for k in range(len(expr_list)):
       el = expr_list[k]
-      if verbose: print "Adding expression '%s'..." % (el)
+      if verbose: print("Adding expression '%s'..." % (el))
       e = Expression(el)
       session.add(e)
       session.flush()
@@ -186,7 +186,7 @@ def add_files(session, imagedir, illuminations, poses, expressions, highresoluti
                 '13_0', '08_0', '09_0', '12_0', '11_0']
     cam_dict = {}
     for el in cam_list:
-      if verbose: print "Adding cameras '%s'..." % (el)
+      if verbose: print("Adding cameras '%s'..." % (el))
       c = Camera(el)
       session.add(c)
       session.flush()
@@ -340,7 +340,7 @@ def add_protocols(session, illuminations, poses, expressions, highresolutions, v
   for proto in protocol_definitions:
     p = Protocol(proto)
     # Add protocol
-    if verbose: print "Adding protocol %s..." % (proto)
+    if verbose: print("Adding protocol %s..." % (proto))
     session.add(p)
     session.flush()
     session.refresh(p)
@@ -349,7 +349,7 @@ def add_protocols(session, illuminations, poses, expressions, highresolutions, v
     for key in range(len(protocolPurpose_list)):
       purpose = protocolPurpose_list[key]
       pu = ProtocolPurpose(p.id, purpose[0], purpose[1])
-      if verbose>1: print "  Adding protocol purpose ('%s','%s')..." % (purpose[0], purpose[1])
+      if verbose>1: print("  Adding protocol purpose ('%s','%s')..." % (purpose[0], purpose[1]))
       session.add(pu)
       session.flush()
       session.refresh(pu)
@@ -385,7 +385,7 @@ def add_protocols(session, illuminations, poses, expressions, highresolutions, v
           q = q.filter(FileMultiview.shot_id.in_(shot_ids))
         q = q.order_by(File.id)
         for k in q:
-          if verbose>1: print "    Adding protocol file '%s'..." % (k.path)
+          if verbose>1: print("    Adding protocol file '%s'..." % (k.path))
           pu.files.append(k)
 
 def create_tables(args):
