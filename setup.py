@@ -23,13 +23,13 @@ from setuptools import setup, find_packages
 setup(
 
     name='xbob.db.multipie',
-    version='1.0.8',
+    version='1.0.9a0',
     description='Multi-PIE Database Access API for Bob',
     url='http://pypi.python.org/pypi/xbob.db.multipie',
     license='GPLv3',
     author='Laurent El Shafey',
     author_email='laurent.el-shafey@idiap.ch',
-    keywords='face recognition, bob, xbob, xbob.db',
+    keywords='face recognition, bob, xbob, xbob.db, multipie',
     long_description=open('README.rst').read(),
 
     # This line is required for any distutils based packaging.
