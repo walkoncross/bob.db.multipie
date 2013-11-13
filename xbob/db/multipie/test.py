@@ -22,6 +22,7 @@
 import os, sys
 import unittest
 from xbob.db.multipie import Database
+from nose.plugins.skip import SkipTest
 
 class MultipieDatabaseTest(unittest.TestCase):
   """Performs various tests on the Multi-PIE database."""
@@ -81,7 +82,20 @@ class MultipieDatabaseTest(unittest.TestCase):
     self.assertTrue(len(db.zobjects()) > 0)
     self.assertTrue(len(db.tobjects()) > 0)
 
-  def test04_driver_api(self):
+  def test04_annotations(self):
+    # read some annotation files and test it's content
+    dir = "/idiap/group/biometric/annotations/multipie"
+    if not os.path.exists(dir):
+      raise SkipTest("The annotation directory '%d' is not available, annotations can't be tested.")
+    db = Database(annotation_directory = dir)
+    import random
+    files = random.sample(db.all_files(), 1000)
+    for file in files:
+      annotations = db.annotations(file.id)
+      self.assertTrue(annotations is not None)
+
+
+  def test05_driver_api(self):
 
     from bob.db.script.dbmanage import main
 

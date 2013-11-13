@@ -23,7 +23,7 @@ from setuptools import setup, find_packages
 setup(
 
     name='xbob.db.multipie',
-    version='1.0.9a0',
+    version='1.1.1a0',
     description='Multi-PIE Database Access API for Bob',
     url='http://pypi.python.org/pypi/xbob.db.multipie',
     license='GPLv3',
@@ -40,7 +40,7 @@ setup(
     install_requires=[
       'setuptools',
       'bob',  # base signal proc./machine learning library
-      'xbob.db.verification.utils>=0.1.4' # defines a set of utilities for face verification databases like this one.
+      'xbob.db.verification.utils>=1.0.0' # defines a set of utilities for face verification databases like this one.
     ],
 
     namespace_packages = [

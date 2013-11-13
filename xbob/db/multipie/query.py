@@ -36,10 +36,16 @@ class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.u
   and for the data itself inside the database.
   """
 
-  def __init__(self):
+  def __init__(self, original_directory = None, original_extension = '.png', annotation_directory = None, annotation_extension = '.pos'):
+    # NOTE: The default original extension '.png' is only valid for the "multiview" data, but not for the "highres" images, which are stored as '.jpg'
+
     # call base class constructors
     xbob.db.verification.utils.SQLiteDatabase.__init__(self, SQLITE_FILE, File)
-    xbob.db.verification.utils.ZTDatabase.__init__(self)
+    xbob.db.verification.utils.ZTDatabase.__init__(self, original_directory=original_directory, original_extension=original_extension)
+
+
+    self.annotation_directory = annotation_directory
+    self.annotation_extension = annotation_extension
 
   def groups(self):
     """Returns the names of all registered groups"""
@@ -567,6 +573,61 @@ class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.u
     if 'eval' in groups:
       zgroups.append('dev')
     return self.objects(protocol, 'probe', model_ids, zgroups, 'client', None, expressions)
+
+  def annotations(self, file_id):
+    """Reads the annotations for the given file id from file and returns them in a dictionary.
+    Depending on the view type of the file (i.e., the camera), different annotations might be returned.
+
+    If you have no copy of the annotations yet, you can download them under http://www.idiap.ch/resource/biometric,
+    where you also can find more information about the annotations.
+
+    Keyword parameters:
+
+    file_id
+      The ID of the file for which the annotations should be read.
+
+    Return value
+      The annotations as a dictionary, e.g., {'reye':(re_y,re_x), 'leye':(le_y,le_x), ...}
+    """
+    if self.annotation_directory is None:
+      return None
+
+    self.assert_validity()
+
+    query = self.query(File).filter(File.id==file_id)
+    assert query.count() == 1
+    annotation_file = query.first().make_path(self.annotation_directory, self.annotation_extension)
+
+    if not os.path.exists(annotation_file):
+      return None
+
+    # read annotations from file
+    annotations = {}
+    with open(annotation_file) as f:
+      count = int(f.readline())
+      if count == 6:
+        # profile annotations
+        labels = ['eye', 'nose', 'mouth', 'lipt', 'lipb', 'chin']
+      elif count == 8:
+        # half profile annotations
+        labels = ['reye', 'leye', 'nose', 'mouthr', 'mouthl', 'lipt', 'lipb', 'chin']
+      elif count == 16:
+        # frontal image annotations
+        labels = ['reye', 'leye', 'reyeo', 'reyei', 'leyei', 'leyeo', 'nose', 'mouthr', 'mouthl', 'lipt', 'lipb', 'chin', 'rbrowo', 'rbrowi', 'lbrowi', 'lbrowo']
+      elif count == 2:
+        labels = ['reye', 'leye']
+        info("Labels of file '%s' are incomplete"%file_name)
+      else:
+        raise ValueError("The number %d of annotations in file '%s' is not handled."%(count, annotation_file))
+
+      for i in range(count):
+        line = f.readline()
+        positions = line.split()
+        assert len(positions) == 2
+        annotations[labels[i]] = (float(positions[1]),float(positions[0]))
+
+    # done.
+    return annotations
 
   def protocol_names(self):
     """Returns all registered protocol names"""
