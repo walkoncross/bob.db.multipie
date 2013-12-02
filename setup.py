@@ -23,7 +23,7 @@ from setuptools import setup, find_packages
 setup(
 
     name='xbob.db.multipie',
-    version='1.1.1a0',
+    version='1.1.1',
     description='Multi-PIE Database Access API for Bob',
     url='http://pypi.python.org/pypi/xbob.db.multipie',
     license='GPLv3',

@@ -31,6 +31,8 @@ class MultipieDatabaseTest(unittest.TestCase):
 
     db = Database()
 
+    self.assertEqual(len(db.groups()), 3)
+
     clients = db.clients()
     self.assertEqual(len(clients), 337) #337 clients overall
     # Number of clients in each set
