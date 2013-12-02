@@ -47,7 +47,7 @@ class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.u
     self.annotation_directory = annotation_directory
     self.annotation_extension = annotation_extension
 
-  def groups(self):
+  def groups(self, protocol=None):
     """Returns the names of all registered groups"""
 
     return ProtocolPurpose.group_choices # Same as Client.group_choices for this database
