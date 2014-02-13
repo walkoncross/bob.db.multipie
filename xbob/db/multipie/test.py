@@ -88,7 +88,7 @@ class MultipieDatabaseTest(unittest.TestCase):
     # read some annotation files and test it's content
     dir = "/idiap/group/biometric/annotations/multipie"
     if not os.path.exists(dir):
-      raise SkipTest("The annotation directory '%d' is not available, annotations can't be tested.")
+      raise SkipTest("The annotation directory '%s' is not available, annotations can't be tested." % dir)
     db = Database(annotation_directory = dir)
     import random
     files = random.sample(db.all_files(), 1000)
