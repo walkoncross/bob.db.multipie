@@ -615,8 +615,8 @@ class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.u
         # frontal image annotations
         labels = ['reye', 'leye', 'reyeo', 'reyei', 'leyei', 'leyeo', 'nose', 'mouthr', 'mouthl', 'lipt', 'lipb', 'chin', 'rbrowo', 'rbrowi', 'lbrowi', 'lbrowo']
       elif count == 2:
+        # for inclomplete annotations, only the two eye locations are available
         labels = ['reye', 'leye']
-        info("Labels of file '%s' are incomplete"%file_name)
       else:
         raise ValueError("The number %d of annotations in file '%s' is not handled."%(count, annotation_file))
 
