@@ -27,7 +27,7 @@ The package is available in two different distribution formats:
 1. You can download it from `PyPI <http://pypi.python.org/pypi>`_, or
 
 2. You can download it in its source form from `its git repository
-   <https://github.com/bioidiap/xbob.db.multipie>`_. When you download the
+   <https://github.com/bioidiap/bob.db.multipie>`_. When you download the
    version at the git repository, you will need to run a command to recreate
    the backend SQLite file required for its operation. This means that the
    database raw files must be installed somewhere in this case. With option
@@ -47,11 +47,11 @@ script)::
 
     install_requires=[
       ...
-      "xbob.db.multipie",
+      "bob.db.multipie",
     ],
 
 Proceed normally with your ``boostrap/buildout`` steps and you should be all
-set. That means you can now import the ``xbob.db.multipie`` namespace into your scripts.
+set. That means you can now import the ``bob.db.multipie`` namespace into your scripts.
 
 Modify your buildout.cfg and download from git
 ==============================================
@@ -67,10 +67,10 @@ lines::
   auto-checkout = *
   eggs = bob
          ...
-         xbob.db.multipie
+         bob.db.multipie
 
   [sources]
-  xbob.db.multipie = git https://github.com/bioidiap/xbob.db.multipie.git
+  bob.db.multipie = git https://github.com/bioidiap/bob.db.multipie.git
   ...
 
 =================
@@ -84,13 +84,13 @@ follow the "download from git" recipe. After doing the bootstrap/buildout step
 (see `here
 <http://www.idiap.ch/software/bob/docs/releases/last/sphinx/html/OrganizeYourCode.html>`_
 for details) in your main directory, you have to go to the (newly created)
-directory ``src/xbob.db.multipie`` and do the same bootstrap/buildout step
+directory ``src/bob.db.multipie`` and do the same bootstrap/buildout step
 again. Finally, you can use the `Bob <http://www.idiap.ch/software/bob/>`_ API:
 ``bin/bob_dbmanage.py multipie create --help`` to regenerate the SQLite file
 based on your criteria.
 
 Afterward, only the requested protocols should be available. If not, please
-`file a bug <https://github.com/bioidiap/xbob.db.multipie/issues>`_ to get help.
+`file a bug <https://github.com/bioidiap/bob.db.multipie/issues>`_ to get help.
 
 
 =================================

@@ -21,15 +21,15 @@ Multi-PIE database in the most obvious ways.
 """
 
 import os
-from bob.db import utils
+from bob.db.base import utils
 from .models import *
 from .driver import Interface
 
-import xbob.db.verification.utils
+import bob.db.verification.utils
 
 SQLITE_FILE = Interface().files()[0]
 
-class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.utils.ZTDatabase):
+class Database(bob.db.verification.utils.SQLiteDatabase, bob.db.verification.utils.ZTDatabase):
   """The dataset class opens and maintains a connection opened to the Database.
 
   It provides many different ways to probe for the characteristics of the data
@@ -40,8 +40,8 @@ class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.u
     # NOTE: The default original extension '.png' is only valid for the "multiview" data, but not for the "highres" images, which are stored as '.jpg'
 
     # call base class constructors
-    xbob.db.verification.utils.SQLiteDatabase.__init__(self, SQLITE_FILE, File)
-    xbob.db.verification.utils.ZTDatabase.__init__(self, original_directory=original_directory, original_extension=original_extension)
+    bob.db.verification.utils.SQLiteDatabase.__init__(self, SQLITE_FILE, File)
+    bob.db.verification.utils.ZTDatabase.__init__(self, original_directory=original_directory, original_extension=original_extension)
 
 
     self.annotation_directory = annotation_directory
@@ -283,7 +283,7 @@ class Database(xbob.db.verification.utils.SQLiteDatabase, xbob.db.verification.u
 
     return [client.id for client in self.tclients(protocol, groups)]
 
-  def get_client_id_from_model_id(self, model_id):
+  def get_client_id_from_model_id(self, model_id, **kwargs):
     """Returns the client_id attached to the given model_id
 
     Keyword Parameters:

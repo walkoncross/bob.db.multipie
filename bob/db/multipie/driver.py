@@ -21,7 +21,7 @@
 
 import os
 import sys
-from bob.db.driver import Interface as BaseInterface
+from bob.db.base.driver import Interface as BaseInterface
 
 # Driver API
 # ==========
@@ -124,7 +124,7 @@ class Interface(BaseInterface):
 
   def version(self):
     import pkg_resources  # part of setuptools
-    return pkg_resources.require('xbob.db.%s' % self.name())[0].version
+    return pkg_resources.require('bob.db.%s' % self.name())[0].version
 
   def files(self):
 

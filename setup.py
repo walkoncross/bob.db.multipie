@@ -22,14 +22,14 @@ from setuptools import setup, find_packages
 # parameters that define our package.
 setup(
 
-    name='xbob.db.multipie',
-    version='1.1.3a0',
+    name='bob.db.multipie',
+    version='2.0.0a0',
     description='Multi-PIE Database Access API for Bob',
-    url='http://pypi.python.org/pypi/xbob.db.multipie',
+    url='http://pypi.python.org/pypi/bob.db.multipie',
     license='GPLv3',
     author='Laurent El Shafey',
     author_email='laurent.el-shafey@idiap.ch',
-    keywords='face recognition, bob, xbob, xbob.db, multipie',
+    keywords='face recognition, bob, bob.db, multipie',
     long_description=open('README.rst').read(),
 
     # This line is required for any distutils based packaging.
@@ -39,29 +39,29 @@ setup(
 
     install_requires=[
       'setuptools',
-      'bob',  # base signal proc./machine learning library
-      'xbob.db.verification.utils>=1.0.0' # defines a set of utilities for face verification databases like this one.
+      'bob.db.base',
+      'bob.db.verification.utils' # defines a set of utilities for face verification databases like this one.
     ],
 
     namespace_packages = [
-      'xbob',
-      'xbob.db',
-      ],
+      'bob',
+      'bob.db',
+    ],
 
     entry_points = {
       # bob database declaration
       'bob.db': [
-        'multipie = xbob.db.multipie.driver:Interface',
-        ],
+        'multipie = bob.db.multipie.driver:Interface',
+      ],
 
       # bob unittest declaration
       'bob.test': [
-        'multipie = xbob.db.multipie.test:MultipieDatabaseTest',
-        ],
-      },
+        'multipie = bob.db.multipie.test',
+      ],
+    },
 
     classifiers = [
-      'Development Status :: 5 - Production/Stable',
+      'Development Status :: 4 - Beta',
       'Environment :: Console',
       'Intended Audience :: Developers',
       'Intended Audience :: Education',
@@ -72,5 +72,5 @@ setup(
       'Programming Language :: Python :: 3',
       'Topic :: Scientific/Engineering :: Artificial Intelligence',
       'Topic :: Database :: Front-Ends',
-      ],
+    ],
 )
