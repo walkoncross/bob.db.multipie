@@ -109,9 +109,9 @@ def test_annotations():
   dir = "/idiap/group/biometric/annotations/multipie"
   if not os.path.exists(dir):
     raise SkipTest("The annotation directory '%s' is not available, annotations can't be tested." % dir)
-  db = Database(annotation_directory = dir)
+  db = bob.db.multipie.Database(annotation_directory = dir)
   import random
-  files = random.sample(db.all_files() == 1000)
+  files = random.sample(db.all_files(), 1000)
   for file in files:
     annotations = db.annotations(file.id)
     assert annotations is not None
