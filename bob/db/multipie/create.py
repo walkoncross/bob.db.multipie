@@ -214,6 +214,7 @@ def add_files(session, imagedir, illuminations, poses, expressions, highresoluti
 
   # session
   for session_id in filter(nodot, os.listdir(imagedir)):
+    if verbose: print("Adding files for session '%s'..." % (session_id))
     se_dir = os.path.join(imagedir, session_id)
 
     # multiview

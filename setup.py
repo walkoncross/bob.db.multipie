@@ -53,11 +53,6 @@ setup(
       'bob.db': [
         'multipie = bob.db.multipie.driver:Interface',
       ],
-
-      # bob unittest declaration
-      'bob.test': [
-        'multipie = bob.db.multipie.test',
-      ],
     },
 
     classifiers = [
