@@ -2,7 +2,7 @@
 # vim: set fileencoding=utf-8 :
 # Laurent El Shafey <laurent.el-shafey@idiap.ch>
 
-"""The Multi-PIE database
+"""This is the Bob database entry for the Multi-PIE database.
 """
 
 from .query import Database

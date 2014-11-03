@@ -125,9 +125,9 @@ def test_driver_api():
   db = bob.db.multipie.Database()
   assert main('multipie dumplist --self-test'.split()) == 0
   if db.has_protocol('M'):
-    assert main('multipie dumplist --protocol=M --class=client --group=dev --purpose=enrol --self-test'.split()) == 0
+    assert main('multipie dumplist --protocol=M --class=client --group=dev --purpose=enroll --self-test'.split()) == 0
   elif db.has_protocol('P051'):
-    assert main('multipie dumplist --protocol=P051 --class=client --group=dev --purpose=enrol --self-test'.split()) == 0
+    assert main('multipie dumplist --protocol=P051 --class=client --group=dev --purpose=enroll --self-test'.split()) == 0
   assert main('multipie checkfiles --self-test'.split()) == 0
   assert main('multipie reverse session02/multiview/108/01/05_1/108_02_01_051_17 --self-test'.split()) == 0
   assert main('multipie path 6578 --self-test'.split()) == 0

@@ -281,24 +281,24 @@ def add_protocols(session, illuminations, poses, expressions, highresolutions, v
   cams_all_P =['24_0', '01_0', '20_0', '19_0', '04_1', '05_0', '05_1', '14_0', '13_0', '08_0', '09_0', '12_0', '11_0']
 
   # ILLUMINATION (FRONTAL) PROTOCOLS
-  # Protocol M: Enrol: No flash; Probe: No flash
+  # Protocol M: enroll: No flash; Probe: No flash
   if illuminations:
     world = [([1,2,3,4], [1], cam051, shots), ([4], [2], cam051, shots)]
-    enrol = [([1], [1], cam051, shot0)]
+    enroll = [([1], [1], cam051, shot0)]
     probe = [([2,3,4], [1], cam051, shot0), ([4], [2], cam051, shot0)]
-    protocol_definitions['M'] = [world, enrol, probe]
+    protocol_definitions['M'] = [world, enroll, probe]
 
-    # Protocol U: Enrol: No flash; Probe: No flash + Any flash
+    # Protocol U: enroll: No flash; Probe: No flash + Any flash
     world = [([1,2,3,4], [1], cam051, shots), ([4], [2], cam051, shots)]
-    enrol = [([1], [1], cam051, shot0)]
+    enroll = [([1], [1], cam051, shot0)]
     probe = [([2,3,4], [1], cam051, shots), ([4], [2], cam051, shots)]
-    protocol_definitions['U'] = [world, enrol, probe]
+    protocol_definitions['U'] = [world, enroll, probe]
 
-    # Protocol G: Enrol: No flash + Any flash; Probe: No flash + Any flash
+    # Protocol G: enroll: No flash + Any flash; Probe: No flash + Any flash
     world = [([1,2,3,4], [1], cam051, shots), ([4], [2], cam051, shots)]
-    enrol = [([1], [1], cam051, shots)]
+    enroll = [([1], [1], cam051, shots)]
     probe = [([2,3,4], [1], cam051, shots), ([4], [2], cam051, shots)]
-    protocol_definitions['G'] = [world, enrol, probe]
+    protocol_definitions['G'] = [world, enroll, probe]
 
   # POSE PROTOCOLS
   if poses:
@@ -307,11 +307,11 @@ def add_protocols(session, illuminations, poses, expressions, highresolutions, v
       # For world, all cameras are used, including the ones with different elevation angle
       # (specify different world_cameras on query if you like to change this behaviour)
       world = [([1,2,3,4], [1], cams_all, shot0), ([4], [2], cams_all, shot0)]
-      # Enrollment is always done on the frontal camera
-      enrol = [([1], [1], cam051, shot0)]
+      # enrollment is always done on the frontal camera
+      enroll = [([1], [1], cam051, shot0)]
       # Probe files are specific for the given camera
       probe = [([2,3,4], [1], cam, shot0), ([4], [2], cam, shot0)]
-      protocol_definitions[name] = [world, enrol, probe]
+      protocol_definitions[name] = [world, enroll, probe]
 
     # add a 'P' protocol that probes with all files with the same elevation angle
     add_pose_protocol('P', cams_all_P)
@@ -343,15 +343,15 @@ def add_protocols(session, illuminations, poses, expressions, highresolutions, v
 
   # EXPRESSION PROTOCOLS; currently only one
   if expressions:
-    # Protocol E: Enrol: Neutral expression (1x); Probe: neutral expression (4x) and other expressions
+    # Protocol E: enroll: Neutral expression (1x); Probe: neutral expression (4x) and other expressions
     world = [([1], [1,2], cam051, shot0), ([2,3,4], [1,2,3], cam051, shot0)]
-    enrol = [([1], [1], cam051, shot0)]
+    enroll = [([1], [1], cam051, shot0)]
     probe = [([2,3,4], [1,2,3], cam051, shot0)]
-    protocol_definitions['E'] = [world, enrol, probe]
+    protocol_definitions['E'] = [world, enroll, probe]
 
 
   # 2. ADDITIONS TO THE SQL DATABASE
-  protocolPurpose_list = [('world', 'train'), ('dev', 'enrol'), ('dev', 'probe'), ('eval', 'enrol'), ('eval', 'probe')]
+  protocolPurpose_list = [('world', 'train'), ('dev', 'enroll'), ('dev', 'probe'), ('eval', 'enroll'), ('eval', 'probe')]
   for proto in protocol_definitions:
     p = Protocol(proto)
     # Add protocol
