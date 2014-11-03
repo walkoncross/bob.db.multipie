@@ -574,7 +574,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase, bob.db.verification.uti
       zgroups.append('dev')
     return self.objects(protocol, 'probe', model_ids, zgroups, 'client', None, expressions)
 
-  def annotations(self, file_id):
+  def annotations(self, file):
     """Reads the annotations for the given file id from file and returns them in a dictionary.
     Depending on the view type of the file (i.e., the camera), different annotations might be returned.
 
@@ -583,7 +583,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase, bob.db.verification.uti
 
     Keyword parameters:
 
-    file_id
+    file
       The ID of the file for which the annotations should be read.
 
     Return value
@@ -592,11 +592,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase, bob.db.verification.uti
     if self.annotation_directory is None:
       return None
 
-    self.assert_validity()
-
-    query = self.query(File).filter(File.id==file_id)
-    assert query.count() == 1
-    annotation_file = query.first().make_path(self.annotation_directory, self.annotation_extension)
+    annotation_file = file.make_path(self.annotation_directory, self.annotation_extension)
 
     if not os.path.exists(annotation_file):
       return None
