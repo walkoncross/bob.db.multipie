@@ -595,7 +595,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase, bob.db.verification.uti
     annotation_file = file.make_path(self.annotation_directory, self.annotation_extension)
 
     if not os.path.exists(annotation_file):
-      return None
+      raise IOError("The annotation file '%s' was not found"%annotation_file)
 
     # read annotations from file
     annotations = {}
@@ -655,4 +655,3 @@ class Database(bob.db.verification.utils.SQLiteDatabase, bob.db.verification.uti
     """Returns the list of allowed purposes"""
 
     return ProtocolPurpose.purpose_choices
-
