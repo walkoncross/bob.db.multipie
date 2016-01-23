@@ -32,7 +32,7 @@ setup(
     name='bob.db.multipie',
     version=version,
     description='Multi-PIE Database Access API for Bob',
-    url='http://pypi.python.org/pypi/bob.db.multipie',
+    url='http://github.com/bioidiap/bob.db.multipie',
     license='GPLv3',
     author='Laurent El Shafey',
     author_email='laurent.el-shafey@idiap.ch',
