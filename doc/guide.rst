@@ -13,7 +13,7 @@ The actual raw data for the `Multi-PIE`_ database should be downloaded from the 
 The Database Interface
 ----------------------
 
-The :py:class:`bob.db.multipie.Database` complies with the standard biometric verification database as described in :ref:`commons`, implementing both interfaces :py:class:`bob.db.verification.utils.SQLiteDatabase` and :py:class:`bob.db.verification.utils.ZTDatabase`.
+The :py:class:`bob.db.multipie.Database` complies with the standard biometric verification database as described in :ref:`commons`, implementing both interfaces :py:class:`bob.db.base.Database`.
 
 .. todo::
    Explain the particularities of the :py:class:`bob.db.multipie.Database`.
