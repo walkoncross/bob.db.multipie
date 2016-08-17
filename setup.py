@@ -49,10 +49,6 @@ setup(
 
 
     entry_points = {
-      # bob database declaration
-      'bob.db': [
-        'multipie = bob.db.multipie.driver:Interface',
-      ],
     },
 
     classifiers = [
