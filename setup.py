@@ -46,9 +46,11 @@ setup(
 
     install_requires = install_requires,
 
-
-
     entry_points = {
+       # bob database declaration
+       'bob.db': [
+         'multipie = bob.db.multipie.driver:Interface',
+       ],
     },
 
     classifiers = [
