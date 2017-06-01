@@ -5,10 +5,10 @@
    :target: http://pythonhosted.org/bob.db.multipie/index.html
 .. image:: http://img.shields.io/badge/docs-latest-orange.svg
    :target: https://www.idiap.ch/software/bob/docs/latest/bob/bob.db.multipie/master/index.html
-.. image:: https://gitlab.idiap.ch/bob/bob.db.multipie/badges/master/build.svg
-   :target: https://gitlab.idiap.ch/bob/bob.db.multipie/commits/master
-.. image:: https://gitlab.idiap.ch/bob/bob.db.multipie/badges/master/coverage.svg
-   :target: https://gitlab.idiap.ch/bob/bob.db.multipie/commits/master
+.. image:: https://gitlab.idiap.ch/bob/bob.db.multipie/badges/v2.1.3/build.svg
+   :target: https://gitlab.idiap.ch/bob/bob.db.multipie/commits/v2.1.3
+.. image:: https://gitlab.idiap.ch/bob/bob.db.multipie/badges/v2.1.3/coverage.svg
+   :target: https://gitlab.idiap.ch/bob/bob.db.multipie/commits/v2.1.3
 .. image:: https://img.shields.io/badge/gitlab-project-0000c0.svg
    :target: https://gitlab.idiap.ch/bob/bob.db.multipie
 .. image:: http://img.shields.io/pypi/v/bob.db.multipie.svg
