@@ -31,7 +31,7 @@ This package contains an interface for the evaluation protocol of the Multi-PIE 
 Installation
 ------------
 
-Complete Bob's `installation`_ instructions. Then, to install this pacakge,
+Complete Bob's `installation`_ instructions. Then, to install this package,
 run::
 
   $ conda install bob.db.multipie
