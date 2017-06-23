@@ -51,6 +51,11 @@ setup(
        'bob.db': [
          'multipie = bob.db.multipie.driver:Interface',
        ],
+
+       'console_scripts': [
+        'bob_db_multipie_crop_faces.py = bob.db.multipie.script.crop_faces:main',
+      ],
+
     },
 
     classifiers = [
