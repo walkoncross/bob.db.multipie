@@ -13,8 +13,6 @@
    :target: https://gitlab.idiap.ch/bob/bob.db.multipie
 .. image:: http://img.shields.io/pypi/v/bob.db.multipie.svg
    :target: https://pypi.python.org/pypi/bob.db.multipie
-.. image:: http://img.shields.io/pypi/dm/bob.db.multipie.svg
-   :target: https://pypi.python.org/pypi/bob.db.multipie
 .. image:: https://img.shields.io/badge/original-data--files-a000a0.png
    :target: http://www.multipie.org
 
