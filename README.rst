@@ -2,9 +2,9 @@
 .. Wed 17 Aug 13:33:14 CEST 2016
 
 .. image:: http://img.shields.io/badge/docs-stable-yellow.svg
-   :target: http://pythonhosted.org/bob.db.multipie/index.html
+   :target: https://www.idiap.ch/software/bob/docs/bob/bob.db.multipie/stable/index.html
 .. image:: http://img.shields.io/badge/docs-latest-orange.svg
-   :target: https://www.idiap.ch/software/bob/docs/latest/bob/bob.db.multipie/master/index.html
+   :target: https://www.idiap.ch/software/bob/docs/bob/bob.db.multipie/master/index.html
 .. image:: https://gitlab.idiap.ch/bob/bob.db.multipie/badges/master/build.svg
    :target: https://gitlab.idiap.ch/bob/bob.db.multipie/commits/master
 .. image:: https://gitlab.idiap.ch/bob/bob.db.multipie/badges/master/coverage.svg
@@ -12,8 +12,6 @@
 .. image:: https://img.shields.io/badge/gitlab-project-0000c0.svg
    :target: https://gitlab.idiap.ch/bob/bob.db.multipie
 .. image:: http://img.shields.io/pypi/v/bob.db.multipie.svg
-   :target: https://pypi.python.org/pypi/bob.db.multipie
-.. image:: http://img.shields.io/pypi/dm/bob.db.multipie.svg
    :target: https://pypi.python.org/pypi/bob.db.multipie
 .. image:: https://img.shields.io/badge/original-data--files-a000a0.png
    :target: http://www.multipie.org
@@ -31,7 +29,7 @@ This package contains an interface for the evaluation protocol of the Multi-PIE 
 Installation
 ------------
 
-Complete Bob's `installation`_ instructions. Then, to install this pacakge,
+Complete Bob's `installation`_ instructions. Then, to install this package,
 run::
 
   $ conda install bob.db.multipie
