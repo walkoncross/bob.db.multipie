@@ -6,7 +6,8 @@
 """ Run face cropping on the Multi Pie database (%(version)s) 
 
 Usage:
-  %(prog)s --basedir=<path> --croppeddir=<path>
+  %(prog)s --basedir=<path> --croppeddir=<path> 
+           [--width=<int>] [--height=<int>] [--gray]
            [--log=<string>] [--gridcount] 
            [--verbose ...] [--plot]
 
@@ -15,6 +16,9 @@ Options:
   -V, --version             Show version.
   -b, --basedir=<path>      Base dir containing the images.
   -c, --croppeddir=<path>   Where to store results.
+      --height=<int>        Height of the cropped image [default: 96] 
+      --width=<int>         Width of the cropped image [default: 96] 
+      --gray                Convert to grayscale
   -l, --log=<string>        Log filename [default: log_face_detect.txt]
   -G, --gridcount           Display the number of objects and exits.
   -v, --verbose             Increase the verbosity (may appear multiple times).
@@ -159,19 +163,54 @@ def main(user_input=None):
                     '01_0': 'r75',
                     '24_0': 'r90',
                    }
+  
+  color_channel = 'rgb'
+  if bool(args['--gray']):
+    color_channel = 'gray'
 
 
-  # === the face cropper ===
-  CROPPED_IMAGE_HEIGHT = 64
-  CROPPED_IMAGE_WIDTH = 64 
-  RIGHT_EYE_POS = (CROPPED_IMAGE_HEIGHT // 5, CROPPED_IMAGE_WIDTH // 4 - 1)
-  LEFT_EYE_POS = (CROPPED_IMAGE_HEIGHT // 5, CROPPED_IMAGE_WIDTH // 4 * 3)
-  face_cropper = FaceCrop(cropped_image_size=(CROPPED_IMAGE_HEIGHT, CROPPED_IMAGE_WIDTH),
-                                              cropped_positions={'leye': LEFT_EYE_POS, 'reye': RIGHT_EYE_POS},
-                                              color_channel='rgb',
-                                              dtype='uint8'
-                                              )
+  # === the face croppers ===
+  # 
+  # This have been done to be compliant with bob.chapter.FRICE
+  #
+  # - 3 croppers: frontal, left and right
+  #
+  # - cropped image size is hard-coded 
+  # - position of eyes (and mouth) in cropped images are hard-coded
+  #   (this should maybe change in the future)
+  #
 
+  # frontal face cropper
+  CROPPED_IMAGE_HEIGHT = 96 
+  CROPPED_IMAGE_WIDTH = 96
+
+  cropped_positions_frontal =  {"reye": (19, 22), "leye" : (19, 72)}
+  cropped_positions_left = cropped_positions={"eye" : (19, 37), "mouth": (62, 37)}
+  cropped_positions_right = cropped_positions={"eye" : (19, 57), "mouth": (62, 57)}
+
+
+  face_cropper_frontal = FaceCrop(cropped_image_size=(CROPPED_IMAGE_HEIGHT, CROPPED_IMAGE_WIDTH),
+                                  cropped_positions=cropped_positions_frontal,
+                                  color_channel=color_channel,
+                                  dtype='uint8')
+  
+  face_cropper_left = FaceCrop(cropped_image_size=(CROPPED_IMAGE_HEIGHT, CROPPED_IMAGE_WIDTH),
+                               cropped_positions=cropped_positions_left,
+                               color_channel=color_channel,
+                               dtype='uint8')
+
+  face_cropper_right = FaceCrop(cropped_image_size=(CROPPED_IMAGE_HEIGHT, CROPPED_IMAGE_WIDTH),
+                                cropped_positions=cropped_positions_right,
+                                color_channel=color_channel,
+                                dtype='uint8')
+
+  # cameras
+  cam_frontal = ('19_0', '04_1', '05_0', '05_1', '13_0', '14_0', '08_0')
+  cam_left = ('09_0', '11_0', '12_0')
+  cam_right = ('24_0', '01_0', '20_0')
+
+
+  # LET'S GO
   for obj in objs:
  
     # get the camera name
@@ -206,30 +245,21 @@ def main(user_input=None):
       pyplot.imshow(numpy.rollaxis(numpy.rollaxis(display, 2),2))
       pyplot.show()
 
-    # if this is a profile, infer position to perform the cropping
-    if len(annotations) == 6:
-
-      dist = numpy.linalg.norm(numpy.array(annotations['eye']) - numpy.array(annotations['nose']))
-      eyes_dist = dist / 1.618 
-      
-      annotations_new = {}
-      annotations_new['leye'] =  (int(annotations['eye'][0]), int(annotations['eye'][1] + eyes_dist))
-      annotations_new['reye'] =  (int(annotations['eye'][0]), int(annotations['eye'][1] - eyes_dist))
-      annotations_new['leye'] =  (int(annotations['eye'][0]), int(annotations['eye'][1] + eyes_dist))
-      annotations_new['reye'] =  (int(annotations['eye'][0]), int(annotations['eye'][1] - eyes_dist))
-      annotations = annotations_new
-
-      if bool(args['--plot']):
-        for key in annotations_new:
-          bob.ip.draw.cross(display, annotations_new[key], 3, (255, 0, 0))
-        pyplot.imshow(numpy.rollaxis(numpy.rollaxis(display, 2),2))
-        pyplot.show()
-
-    cropped = face_cropper(image, annotations)
-        
+    # check which cropper has to be called
+    if camera in cam_frontal:
+      cropped = face_cropper_frontal(image, annotations)
+    if camera in cam_left:
+      cropped = face_cropper_left(image, annotations)
+    if camera in cam_right:
+      cropped = face_cropper_right(image, annotations)
+    
     if bool(args['--plot']):
       from matplotlib import pyplot
-      pyplot.imshow(numpy.rollaxis(numpy.rollaxis(cropped, 2),2))
+      if color_channel == 'rgb':
+        pyplot.imshow(numpy.rollaxis(numpy.rollaxis(cropped, 2),2))
+      else:
+        pyplot.imshow(cropped, cmap='gray')
+
       pyplot.show()
  
     if not os.path.isdir(os.path.dirname(cropped_filename)):
