@@ -6,29 +6,28 @@
 """ Run face cropping on the Multi Pie database (%(version)s) 
 
 Usage:
-  %(prog)s --basedir=<path> --croppeddir=<path> 
+  %(prog)s <basedir> <croppeddir> 
            [--width=<int>] [--height=<int>] [--gray]
-           [--log=<string>] [--gridcount] 
-           [--verbose ...] [--plot]
+           [--force] [--gridcount] [--cluster] 
+           [--verbose ...] [--show]
 
 Options:
   -h, --help                Show this screen.
   -V, --version             Show version.
-  -b, --basedir=<path>      Base dir containing the images.
-  -c, --croppeddir=<path>   Where to store results.
-      --height=<int>        Height of the cropped image [default: 96] 
-      --width=<int>         Width of the cropped image [default: 96] 
-      --gray                Convert to grayscale
-  -l, --log=<string>        Log filename [default: log_face_detect.txt]
+      --height=<int>        Height of the cropped image [default: 96]. 
+      --width=<int>         Width of the cropped image [default: 96]. 
+  -g, --gray                Convert to grayscale.
+  -f, --force               Overwrite existing cropped image files.
   -G, --gridcount           Display the number of objects and exits.
+  -c, --cluster             Cluster the cropped face images by pose.
   -v, --verbose             Increase the verbosity (may appear multiple times).
-  -P, --plot                Show some stuff
+  -s, --show                Show some stuff.
 
 Example:
 
   To run the face cropping process
 
-    $ %(prog)s --croppeddir path/to/cropped
+    $ %(prog)s path/to/orignal/data path/to/cropped
 
 See '%(prog)s --help' for more information.
 
@@ -37,11 +36,6 @@ See '%(prog)s --help' for more information.
 import os
 import sys
 import pkg_resources
-
-import logging
-__logging_format__='[%(levelname)s] %(message)s'
-logging.basicConfig(format=__logging_format__)
-logger = logging.getLogger("face_crop_log")
 
 from docopt import docopt
 
@@ -56,6 +50,9 @@ import bob.bio.face
 import bob.db.multipie
 import bob.ip.facedetect
 import bob.ip.draw
+
+import bob.core
+logger = bob.core.log.setup("bob.db.multipie")
 
 from bob.bio.face.preprocessor import FaceCrop, FaceDetect
 
@@ -99,10 +96,9 @@ def filter_for_sge_task(l):
 def main(user_input=None):
   """
   
-  Main function to crop faces in Multi Pie frontal images 
+  Main function to crop faces in Multi Pie images 
 
   """
-
   # Parse the command-line arguments
   if user_input is not None:
       arguments = user_input
@@ -113,17 +109,19 @@ def main(user_input=None):
   completions = dict(prog=prog, version=version,)
   args = docopt(__doc__ % completions,argv=arguments,version='Face cropping (%s)' % version,)
 
-  # if the user wants more verbosity, lowers the logging level
-  if args['--verbose'] == 1: logging.getLogger("face_crop_log").setLevel(logging.INFO)
-  elif args['--verbose'] >= 2: logging.getLogger("face_crop_log").setLevel(logging.DEBUG)
-
- 
+  # set verbosity level 
+  bob.core.log.set_verbosity_level(logger, args['--verbose'])
+  
   # === collect the objects to process ===
   
   # the database
   annotations_dir = "/idiap/group/biometric/annotations/multipie"
-  db = bob.db.multipie.Database(annotation_directory = annotations_dir) 
+  if not os.path.isdir(annotations_dir):
+    logger.error("You should provide a directory containing annotations !")
+    sys.exit()
 
+  db = bob.db.multipie.Database(annotation_directory = annotations_dir) 
+  
   # dict with the file stem as key and the (File, camera name) as value
   to_process = {}
   for camera in sorted(db.camera_names()):
@@ -209,7 +207,6 @@ def main(user_input=None):
   cam_left = ('09_0', '11_0', '12_0')
   cam_right = ('24_0', '01_0', '20_0')
 
-
   # LET'S GO
   for obj in objs:
  
@@ -218,24 +215,25 @@ def main(user_input=None):
     logger.info("Processing file {0} (camera {1})".format(obj.path, camera))
 
     # the resulting filename
-    temp = os.path.split(obj.path)
-    cropped_filename = os.path.join(args['--croppeddir'], camera_to_pose[camera], temp[1])
-    cropped_filename += '.png'
+    cropped_filename = obj.make_path(directory=args['<croppeddir>'], extension='.png')
+    if bool(args['--cluster']):
+      temp = os.path.split(obj.path)
+      cropped_filename = os.path.join(args['<croppeddir>'], camera_to_pose[camera], temp[1])
+      cropped_filename += '.png'
      
     # skip if the file exists
-    if os.path.isfile(cropped_filename):
+    if os.path.isfile(cropped_filename) and not args['--force']:
       logger.warn("{0} already exists !".format(cropped_filename))
       continue
       
     # get the original image
-    img_file = os.path.join(args['--basedir'], obj.path)
-    img_file += ".png"
-    image = bob.io.base.load(img_file) 
+    img_filename = obj.make_path(directory=args['<basedir>'], extension='.png')
+    image = bob.io.base.load(img_filename) 
 
     # get the annotations 
     annotations = db.annotations(obj)
 
-    if bool(args['--plot']):
+    if bool(args['--show']):
       from matplotlib import pyplot
       display = numpy.copy(image)
       annot_int = {}
@@ -253,15 +251,13 @@ def main(user_input=None):
     if camera in cam_right:
       cropped = face_cropper_right(image, annotations)
     
-    if bool(args['--plot']):
+    if bool(args['--show']):
       from matplotlib import pyplot
       if color_channel == 'rgb':
         pyplot.imshow(numpy.rollaxis(numpy.rollaxis(cropped, 2),2))
       else:
         pyplot.imshow(cropped, cmap='gray')
-
       pyplot.show()
- 
-    if not os.path.isdir(os.path.dirname(cropped_filename)):
-      os.makedirs(os.path.dirname(cropped_filename))
-    bob.io.base.save(cropped, cropped_filename)
+
+    # save the cropped image
+    bob.io.base.save(cropped, cropped_filename, create_directories=True)
