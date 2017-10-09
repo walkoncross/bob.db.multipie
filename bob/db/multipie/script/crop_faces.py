@@ -3,25 +3,27 @@
 # Guillaume HEUSCH <guillaume.heusch@idiap.ch>
 # Mon 24 Apr 09:35:40 CEST 2017
 
-""" Run face cropping on the Multi Pie database (%(version)s) 
+""" Run face cropping on the Multi PIE database (%(version)s) 
 
 Usage:
-  %(prog)s <basedir> <croppeddir> 
+  %(prog)s <basedir> <croppeddir>
+           [--annotationdir=<path>]
            [--width=<int>] [--height=<int>] [--gray]
            [--force] [--gridcount] [--cluster] 
            [--verbose ...] [--show]
 
 Options:
-  -h, --help                Show this screen.
-  -V, --version             Show version.
-      --height=<int>        Height of the cropped image [default: 96]. 
-      --width=<int>         Width of the cropped image [default: 96]. 
-  -g, --gray                Convert to grayscale.
-  -f, --force               Overwrite existing cropped image files.
-  -G, --gridcount           Display the number of objects and exits.
-  -c, --cluster             Cluster the cropped face images by pose.
-  -v, --verbose             Increase the verbosity (may appear multiple times).
-  -s, --show                Show some stuff.
+  -h, --help                  Show this screen.
+  -V, --version               Show version.
+  -a, --annotationdir=<path>  The directory where annotations are stored [default: /idiap/group/biometric/annotations/multipie/].
+      --height=<int>          Height of the cropped image [default: 96]. 
+      --width=<int>           Width of the cropped image [default: 96]. 
+  -g, --gray                  Convert to grayscale.
+  -f, --force                 Overwrite existing cropped image files.
+  -G, --gridcount             Display the number of objects and exits.
+  -c, --cluster               Cluster the cropped face images by pose.
+  -v, --verbose               Increase the verbosity (may appear multiple times).
+  -s, --show                  Show  
 
 Example:
 
@@ -96,7 +98,7 @@ def filter_for_sge_task(l):
 def main(user_input=None):
   """
   
-  Main function to crop faces in Multi Pie images 
+  Main function to crop faces in Multi PIE images 
 
   """
   # Parse the command-line arguments
@@ -115,9 +117,9 @@ def main(user_input=None):
   # === collect the objects to process ===
   
   # the database
-  annotations_dir = "/idiap/group/biometric/annotations/multipie"
+  annotations_dir = args['--annotationdir'] 
   if not os.path.isdir(annotations_dir):
-    logger.error("You should provide a directory containing annotations !")
+    logger.error("You should provide a valid directory containing annotations !")
     sys.exit()
 
   db = bob.db.multipie.Database(annotation_directory = annotations_dir) 
@@ -223,7 +225,7 @@ def main(user_input=None):
      
     # skip if the file exists
     if os.path.isfile(cropped_filename) and not args['--force']:
-      logger.warn("{0} already exists !".format(cropped_filename))
+      logger.debug("{0} already exists !".format(cropped_filename))
       continue
       
     # get the original image
@@ -233,15 +235,6 @@ def main(user_input=None):
     # get the annotations 
     annotations = db.annotations(obj)
 
-    if bool(args['--show']):
-      from matplotlib import pyplot
-      display = numpy.copy(image)
-      annot_int = {}
-      for key in annotations:
-        annot_int[key] = (int(annotations[key][0]), int(annotations[key][1])) 
-        bob.ip.draw.cross(display, annot_int[key], 3, (0, 255, 0))
-      pyplot.imshow(numpy.rollaxis(numpy.rollaxis(display, 2),2))
-      pyplot.show()
 
     # check which cropper has to be called
     if camera in cam_frontal:
@@ -252,12 +245,28 @@ def main(user_input=None):
       cropped = face_cropper_right(image, annotations)
     
     if bool(args['--show']):
+      
+      # display original image with annotations
       from matplotlib import pyplot
+      pyplot.ion()
+      display = numpy.copy(image)
+      annot_int = {}
+      for key in annotations:
+        annot_int[key] = (int(annotations[key][0]), int(annotations[key][1])) 
+        bob.ip.draw.cross(display, annot_int[key], 3, (0, 255, 0))
+      pyplot.imshow(numpy.rollaxis(numpy.rollaxis(display, 2),2))
+      pyplot.show()
+      raw_input("Press Enter to continue to the next image (or Ctrl-C + Enter to exit)")
+      pyplot.close()
+      
+      # display cropped face 
       if color_channel == 'rgb':
         pyplot.imshow(numpy.rollaxis(numpy.rollaxis(cropped, 2),2))
       else:
         pyplot.imshow(cropped, cmap='gray')
       pyplot.show()
+      raw_input("Press Enter to continue to the next image (or Ctrl-C + Enter to exit)")
+      pyplot.close()
 
     # save the cropped image
     bob.io.base.save(cropped, cropped_filename, create_directories=True)
