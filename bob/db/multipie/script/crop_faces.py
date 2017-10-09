@@ -23,7 +23,7 @@ Options:
   -G, --gridcount             Display the number of objects and exits.
   -c, --cluster               Cluster the cropped face images by pose.
   -v, --verbose               Increase the verbosity (may appear multiple times).
-  -s, --show                  Show  
+  -s, --show                  Show original face and annotations, and the cropped face. 
 
 Example:
 
